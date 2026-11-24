@@ -4,8 +4,8 @@ Each phase ends with a review. **No phase starts without your approval.** Phases
 
 | Phase | Name | Status |
 |---|---|---|
-| 1 | Repository architecture and scaffolding | In review |
-| 2 | Design system and shared configuration | Not started |
+| 1 | Repository architecture and scaffolding | Approved |
+| 2 | Design system and shared configuration | In review |
 | 3 | Terminal: Kitty, Zsh, Fastfetch | Not started |
 | 4 | Hyprland and keyboard shortcuts | Not started |
 | 5 | Waybar and Rofi | Not started |
@@ -21,7 +21,8 @@ Each phase ends with a review. **No phase starts without your approval.** Phases
 
 ## Phase 2 — Design system and shared configuration
 **Deliver:** `design/palette.toml`, theme render script, typography and spacing decisions (font choice, border radius, opacity values), shared shell library (`lib/`: logging, backup, preflight).
-**Exit:** render script output is deterministic and validated; library functions have unit tests. Still no installer touching `$HOME`.
+**Done in Phase 2:** palette and generator with validation and contrast checks, six committed generated files, `lib/` (log, detect, preflight, backup), `scripts/detect-env`, tests, CI, ADRs 0001 to 0004, LICENSE and third-party notices.
+**Exit:** you review the proposed palette additions; the generator and library tests pass on your machine too (`bash tests/run.sh`). Still no installer touching `$HOME`.
 
 ## Phase 3 — Terminal customization
 **Deliver:** Kitty, Zsh and Fastfetch modules, themed from the palette.
@@ -30,7 +31,7 @@ Each phase ends with a review. **No phase starts without your approval.** Phases
 
 ## Phase 4 — Hyprland configuration and shortcuts
 **Deliver:** Hyprland module, keybinding map (documented as a table), monitor, input and ThinkPad specifics (TrackPoint, touchpad, function keys, brightness), idle and lock.
-**Prerequisite:** decision on Hyprland packaging source.
+**Prerequisite:** run the COPR verification commands in `docs/FEDORA-COMPATIBILITY.md` on the ThinkPad and report the results. The source decision is made (ADR 0001).
 **Exit:** a login into the Hyprland session works and the previous session still works.
 
 ## Phase 5 — Waybar and Rofi

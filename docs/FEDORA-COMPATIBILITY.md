@@ -2,6 +2,28 @@
 
 Compiled in Phase 1 from public sources (Fedora release notes, COPR pages, community reports), **not from your machine**. Items marked **VERIFY** must be confirmed on the ThinkPad with `dnf info <pkg>` or by `zackos doctor` once it exists.
 
+## `lionheartp/Hyprland` COPR (checked 2026-11-24 via the public COPR API)
+
+Result: **supports Fedora 44 x86_64 and is actively maintained.** The project lists a `fedora-44-x86_64` chroot. Recent builds, including stable `hyprland` 0.57.2, `hyprutils`, `aquamarine`, `hyprlock`, `hypridle` and `xdg-desktop-portal-hyprland`, succeeded for it, and builds were landing on the day of the check. Full evidence, risks and conditions: [ADR 0001](decisions/0001-hyprland-source.md).
+
+Still unverified: that upstream's own Fedora guidance names this COPR (the wiki could not be fetched here), and everything on your machine. Read-only checks you can run on the ThinkPad (they do not enable anything):
+
+```
+# 1. The COPR still lists a Fedora 44 x86_64 chroot
+curl -s 'https://copr.fedorainfracloud.org/api_3/project?ownername=lionheartp&projectname=Hyprland' | grep -o 'fedora-44-x86_64' | head -1
+
+# 2. Latest successful builds and their dates
+curl -s 'https://copr.fedorainfracloud.org/api_3/build/list?ownername=lionheartp&projectname=Hyprland&status=succeeded&limit=5&order_type=DESC'
+
+# 3. Your Fedora release and architecture
+cat /etc/fedora-release; uname -m
+
+# 4. Which of the planned packages Fedora already offers officially
+dnf info kitty zsh neovim fastfetch waybar rofi dolphin 2>&1 | grep -E '^(Name|Version|Repository)|No match'
+```
+
+Please paste the output back.
+
 ## Confirmed from public sources
 
 1. **Hyprland is not in Fedora's official repositories for F43/F44.** It was available in F42 and then orphaned; on F44 it comes from a COPR or a source build. Several third-party COPRs exist (for example `ashbuk/Hyprland-Fedora`, `lionheartp/Hyprland`).
@@ -19,7 +41,7 @@ Compiled in Phase 1 from public sources (Fedora release notes, COPR pages, commu
 |---|---|
 | `kitty`, `zsh`, `neovim`, `fastfetch`, `waybar`, `dolphin` in official F44 repos | Expected but not confirmed here |
 | Rofi Wayland support | Historically a separate `rofi-wayland` fork; confirm what the F44 `rofi` package supports |
-| Edition installed (Workstation/GNOME vs KDE) | Dolphin pulls in many KDE libraries on GNOME |
+| Edition installed (Workstation/GNOME vs KDE) | Not blocking: ZackOS auto-detects (`bash scripts/detect-env`). Dolphin is optional because it pulls in KDE libraries on GNOME |
 | Waybar version vs. Hyprland IPC | Workspace modules break with mismatched versions |
 | Intel UHD 620 graphics, Mesa version | Blur and animation cost on integrated GPU |
 | ThinkPad specifics: TrackPoint, function keys, brightness, `fprintd` fingerprint, `power-profiles-daemon`/TLP | Need explicit keybindings and verification |
@@ -28,7 +50,8 @@ Compiled in Phase 1 from public sources (Fedora release notes, COPR pages, commu
 
 ## Design consequences
 
-- **Pin Hyprland** to one version and one COPR (or a source build); record it in `packages/fedora44.txt` and an ADR.
+- **Pin Hyprland** to one version from the `lionheartp/Hyprland` COPR (ADR 0001) and record it in `packages/fedora44.txt` once Phase 4 starts.
+- **The COPR also carries `kitty` and `waybar-git`.** Restrict it to an allowlist so it cannot shadow Fedora's official packages (the DNF5 `includepkgs` option needs verifying).
 - **Never mix** Hyprland ecosystem packages from different COPRs.
 - **Install the session file only through the package**, to avoid ZackOS writing to `/usr/share` itself.
 - **Keep the default session available** so a broken Hyprland update cannot lock you out.

@@ -34,6 +34,9 @@ Every script that can change the system must:
 
 ## Rules for configuration
 
+- Every source file carries `SPDX-License-Identifier: GPL-3.0-or-later` (generated files get it automatically).
+- Never edit a generated file. Change `design/palette.toml` or a template, run `python3 scripts/render-theme.py`, and commit the sources and the regenerated files together. CI fails otherwise.
+- Third-party assets need an entry in `THIRD_PARTY_NOTICES.md` before they are committed.
 - Colors come from `design/palette.toml`. Do not hard-code hex values in module files.
 - Keep modules independent. Declare dependencies in `module.conf`.
 - Machine-specific values go in untracked local override files.
@@ -45,7 +48,7 @@ Adding a package needs a reason in the pull request and an entry in the package 
 
 ## Testing
 
-Read [docs/TESTING.md](docs/TESTING.md). A change is not done until its tests exist and pass.
+Read [docs/TESTING.md](docs/TESTING.md). Run `bash tests/run.sh` before every push. A change is not done until its tests exist and pass.
 
 ## Claims about testing
 

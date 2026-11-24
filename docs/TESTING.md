@@ -2,14 +2,24 @@
 
 Constraint: development happens without access to the target machine. Anything that can be proven off-machine is tested automatically; anything that can't is verified by a documented manual run on the ThinkPad, with results reported back.
 
+## Running the tests now
+
+```
+bash tests/run.sh
+```
+
+This runs: the generated-files sync check, 21 Python unit tests, the shell tests (log, detect, preflight, backup/restore) and shellcheck if installed. Everything runs in temporary directories with a fake root, so it never touches your real `$HOME` or system. It needs only `bash`, `python3` (3.11+) and standard coreutils. `shellcheck` is optional.
+
+In Phase 2 these ran in a generic Linux sandbox (not Fedora, not the ThinkPad) and passed. They have **not** been run on your machine yet; please run them and report the output.
+
 ## Test levels
 
 | Level | What | Where | When |
 |---|---|---|---|
-| 1. Static | `shellcheck`, `shfmt`, markdown lint, `taplo`/TOML validity for the palette | CI and local | Every push |
+| 1. Static | `shellcheck` (in place); `shfmt`, markdown lint (planned); TOML validity is enforced by the generator | CI and local | Every push |
 | 2. Config validation | Parse each config with its own tool where one exists (for example `hyprland --verify-config`, `kitty --debug-config`, `zsh -n`, `nvim --headless` load check, JSON/CSS validity for Waybar) | CI container where the tool is installable, otherwise local on the ThinkPad | Every push or per phase |
 | 3. Generation | Rendered theme files equal committed files; palette contains all 7 required keys and valid hex | CI | Every push |
-| 4. Unit | Bash library functions (backup, symlink, manifest) via `bats` | CI | Every push |
+| 4. Unit | Bash library functions (log, detect, preflight, backup) using the small harness in `tests/shell/harness.sh` (no framework needed); Python tests with `unittest` | CI and local | Every push |
 | 5. Integration | Full `plan`/`install`/`rollback` in a **fake `$HOME`** inside a `fedora:44` container | CI | Every push to `main` and PRs |
 | 6. Manual on-device | Real login to the session, keybindings, brightness keys, suspend, external monitor | ThinkPad | End of each phase |
 

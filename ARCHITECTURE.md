@@ -1,6 +1,6 @@
 # ZackOS Architecture
 
-Status: Phase 1 proposal. Nothing here is implemented yet.
+Status: Phase 1 design, updated in Phase 2. Implemented so far: the design system, the generated theme fragments and the shared shell library (`lib/`). Everything else is still planned.
 
 ## 1. Goals and non-goals
 
@@ -28,9 +28,12 @@ ZackOS/
 ├── docs/
 │   ├── TESTING.md
 │   ├── FEDORA-COMPATIBILITY.md
+│   ├── DESIGN-SYSTEM.md
 │   └── decisions/            # ADRs: one short file per major decision
 ├── design/
-│   └── palette.toml          # single source of truth for colors (Phase 2)
+│   ├── palette.toml          # single source of truth (colors, fonts, geometry, effects)
+│   ├── targets.toml          # template -> generated file mapping
+│   └── templates/            # one template per themed file type
 ├── modules/                  # one directory per component
 │   ├── kitty/
 │   │   ├── module.conf       # metadata: name, packages, targets, deps
@@ -44,17 +47,24 @@ ZackOS/
 │   └── dolphin/
 ├── packages/
 │   └── fedora44.txt          # package manifest: name, source (fedora|copr:x), purpose
-├── lib/                      # shared shell library (logging, backup, symlink, checks)
+├── lib/                      # shared shell library
+│   ├── log.sh                #   logging, exit codes, dry-run helpers
+│   ├── detect.sh             #   read-only desktop / display manager / Fedora detection
+│   ├── preflight.sh          #   preflight checks
+│   ├── backup.sh             #   backup, verify, restore (never deletes)
+│   └── palette.sh            #   GENERATED from palette.toml
 ├── bin/
 │   └── zackos                # single CLI entry point (Phase 7)
 ├── scripts/
-│   ├── render-theme          # palette → per-app generated configs (Phase 2)
-│   └── check-*               # validation scripts used locally and in CI
-├── tests/
-└── .github/workflows/        # CI (lint, validation)
+│   ├── render-theme.py       # palette -> generated files (--check, --report)
+│   └── detect-env            # read-only environment report
+├── tests/                    # python unit tests, shell tests, run.sh
+├── LICENSE                   # GPL-3.0-or-later
+├── THIRD_PARTY_NOTICES.md    # asset and font licenses
+└── .github/workflows/        # CI: runs tests/run.sh
 ```
 
-Only the documentation files exist today. Directories appear in the phase that needs them.
+`modules/` currently holds only generated theme fragments. Directories for later phases (`packages/`, `bin/`) appear when needed. CI was brought forward from Phase 8 because the generated-files check is part of the design-system guarantee.
 
 ## 4. Configuration management
 
@@ -62,7 +72,7 @@ Only the documentation files exist today. Directories appear in the phase that n
 
 **Deployment method: symlinks into the repo, with a manifest.** Files under `modules/<name>/files/` are symlinked to their target path (for example `modules/kitty/files/.config/kitty/kitty.conf` → `~/.config/kitty/kitty.conf`). Reasons: editing the live config edits the repo, so changes are easy to commit, and removal is deleting a link. Trade-off: the repo checkout must stay in place; documented and checked by `zackos doctor`.
 
-**Theming pipeline.** `design/palette.toml` is rendered by `scripts/render-theme` into per-app color fragments (Kitty, Waybar CSS, Rofi rasi, Hyprland variables, Neovim). Generated files are committed so installation needs no build step. CI fails if generated files are out of date.
+**Theming pipeline.** `design/palette.toml` is rendered by `scripts/render-theme.py` into per-app fragments (Kitty, Waybar CSS, Rofi rasi, Hyprland variables, Neovim, and `lib/palette.sh`). Generated files are committed so installation needs no build step, and CI fails if they are stale (ADR 0003). Details: [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md).
 
 **User-local overrides.** Each module supports an untracked `local.*` include (for example `~/.config/kitty/local.conf`) so machine-specific tweaks never conflict with updates.
 
@@ -115,16 +125,20 @@ State lives in `~/.local/state/zackos/`:
 
 **Backups are never deleted automatically.** Pruning is an explicit user command.
 
+## 6b. Desktop independence
+
+ZackOS adds a session; it never requires or replaces GNOME, KDE or any other desktop (ADR 0004). `lib/detect.sh` reports the Fedora version, desktop (`XDG_CURRENT_DESKTOP`), session type, display manager (from the `display-manager.service` link) and installed session files. Modules use it to adapt or skip. Unknown display managers produce a warning with manual steps rather than a guess. Modules may be marked optional in `module.conf`; optional modules (Dolphin) are installed only on request.
+
 ## 7. Session and component roles
 
 | Component | Role | Notes |
 |---|---|---|
-| Hyprland | Compositor and window management | Needs third-party packaging on Fedora 44 |
+| Hyprland | Compositor and window management | From the `lionheartp/Hyprland` COPR, stable package only (ADR 0001) |
 | Waybar | Status bar | Styled from palette |
 | Rofi | Launcher | Wayland support must be verified on F44 |
 | Kitty | Terminal | |
 | Zsh | Shell | Prompt and plugins kept minimal, no framework unless justified by ADR |
-| Dolphin | File manager | Pulls in KDE dependencies on a GNOME install; evaluate vs. alternatives |
+| Dolphin | File manager | **Optional.** Pulls in KDE libraries on a GNOME install |
 | Neovim | Terminal editor | Minimal config first |
 | Fastfetch | System info | Themed to palette |
 
@@ -138,9 +152,16 @@ A shared `lib/log.sh` provides `log_info`, `log_warn`, `log_error`, `log_step`. 
 
 See [docs/TESTING.md](docs/TESTING.md) and [docs/FEDORA-COMPATIBILITY.md](docs/FEDORA-COMPATIBILITY.md).
 
-## 10. Open decisions (need your input before Phase 2)
+## 10. Decisions
 
-1. Which Fedora 44 edition is installed: Workstation (GNOME) or KDE Plasma? This affects Dolphin dependencies and the login session setup.
-2. Which Hyprland source to trust: a COPR, or building from source.
-3. License choice.
-4. Whether generated theme files are committed (proposed) or built at install time.
+Resolved on 2026-11-24 (Phase 2 approval):
+
+1. Desktop: stay desktop-independent, auto-detect, Dolphin optional. [ADR 0004](docs/decisions/0004-desktop-independence.md)
+2. Hyprland: `lionheartp/Hyprland` COPR, no source build. [ADR 0001](docs/decisions/0001-hyprland-source.md)
+3. License: GPL-3.0-or-later. [ADR 0002](docs/decisions/0002-license-gpl-3.0-or-later.md)
+4. Generated theme files are committed. [ADR 0003](docs/decisions/0003-committed-generated-theme-files.md)
+
+Open:
+
+- Approve or change the proposed additions in `design/palette.toml` (status colors, 16-color terminal palette, fonts, geometry, effects).
+- Which edition (GNOME or KDE) is installed: run `bash scripts/detect-env` and paste the output. Not blocking, since the design is desktop-independent.
