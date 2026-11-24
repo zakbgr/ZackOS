@@ -1,0 +1,20 @@
+@@HEADER@@
+-- Use with:  local p = require("zackos.palette")
+
+return {
+  background = "{{ colors.background }}",
+  background_alt = "{{ colors.background_alt }}",
+  accent = "{{ colors.accent }}",
+  green = "{{ colors.green }}",
+  text = "{{ colors.text }}",
+  muted = "{{ colors.muted }}",
+  border = "{{ colors.border }}",
+  warning = "{{ semantic.warning }}",
+  error = "{{ semantic.error }}",
+  ansi = {
+    "{{ ansi.normal.0 }}", "{{ ansi.normal.1 }}", "{{ ansi.normal.2 }}", "{{ ansi.normal.3 }}",
+    "{{ ansi.normal.4 }}", "{{ ansi.normal.5 }}", "{{ ansi.normal.6 }}", "{{ ansi.normal.7 }}",
+    "{{ ansi.bright.0 }}", "{{ ansi.bright.1 }}", "{{ ansi.bright.2 }}", "{{ ansi.bright.3 }}",
+    "{{ ansi.bright.4 }}", "{{ ansi.bright.5 }}", "{{ ansi.bright.6 }}", "{{ ansi.bright.7 }}",
+  },
+}

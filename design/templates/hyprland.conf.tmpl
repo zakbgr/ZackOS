@@ -1,0 +1,23 @@
+@@HEADER@@
+# Variables only. Sections (general, decoration, animations) are written in Phase 4.
+# Include from hyprland.conf with:  source = ~/.config/hypr/zackos-theme.conf
+# Syntax must be checked against the installed Hyprland version (Hyprland --verify-config).
+
+$zackos_background     = {{ colors.background | hypr }}
+$zackos_background_alt = {{ colors.background_alt | hypr }}
+$zackos_accent         = {{ colors.accent | hypr }}
+$zackos_green          = {{ colors.green | hypr }}
+$zackos_text           = {{ colors.text | hypr }}
+$zackos_muted          = {{ colors.muted | hypr }}
+$zackos_border         = {{ colors.border | hypr }}
+$zackos_warning        = {{ semantic.warning | hypr }}
+$zackos_error          = {{ semantic.error | hypr }}
+
+$zackos_rounding        = {{ geometry.radius }}
+$zackos_border_size     = {{ geometry.border_size }}
+$zackos_gaps_in         = {{ geometry.gap_inner }}
+$zackos_gaps_out        = {{ geometry.gap_outer }}
+$zackos_opacity_active   = {{ effects.window_opacity_active }}
+$zackos_opacity_inactive = {{ effects.window_opacity_inactive }}
+$zackos_anim_fast_ms    = {{ effects.animation_fast_ms }}
+$zackos_anim_normal_ms  = {{ effects.animation_normal_ms }}

@@ -1,0 +1,17 @@
+@@HEADER@@
+# shellcheck shell=bash
+# shellcheck disable=SC2034  # variables are consumed by files that source this one
+
+ZACKOS_COLOR_BACKGROUND="{{ colors.background }}"
+ZACKOS_COLOR_ACCENT="{{ colors.accent }}"
+ZACKOS_COLOR_GREEN="{{ colors.green }}"
+ZACKOS_COLOR_TEXT="{{ colors.text }}"
+ZACKOS_COLOR_MUTED="{{ colors.muted }}"
+
+# RGB triplets for ANSI truecolor escapes: ESC[38;2;<value>m
+ZACKOS_RGB_ACCENT="{{ colors.accent | rgbsc }}"
+ZACKOS_RGB_GREEN="{{ colors.green | rgbsc }}"
+ZACKOS_RGB_TEXT="{{ colors.text | rgbsc }}"
+ZACKOS_RGB_MUTED="{{ colors.muted | rgbsc }}"
+ZACKOS_RGB_WARNING="{{ semantic.warning | rgbsc }}"
+ZACKOS_RGB_ERROR="{{ semantic.error | rgbsc }}"

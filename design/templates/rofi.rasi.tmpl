@@ -1,0 +1,17 @@
+@@HEADER@@
+/* Import from a theme with:  @import "zackos-theme" */
+
+* {
+    zackos-background:             {{ colors.background }};
+    zackos-background-alt:         {{ colors.background_alt }};
+    zackos-background-translucent: {{ colors.background | hexa:effects.bar_opacity }};
+    zackos-accent:                 {{ colors.accent }};
+    zackos-green:                  {{ colors.green }};
+    zackos-text:                   {{ colors.text }};
+    zackos-muted:                  {{ colors.muted }};
+    zackos-border:                 {{ colors.border }};
+    zackos-warning:                {{ semantic.warning }};
+    zackos-error:                  {{ semantic.error }};
+    zackos-radius:                 {{ geometry.radius }}px;
+    zackos-border-width:           {{ geometry.border_size }}px;
+}

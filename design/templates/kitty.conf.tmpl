@@ -1,0 +1,43 @@
+@@HEADER@@
+# Include from kitty.conf with:  include zackos-theme.conf
+
+font_family          {{ fonts.mono }}
+font_size            {{ fonts.mono_size }}
+
+foreground           {{ colors.text }}
+background           {{ colors.background }}
+background_opacity   {{ effects.terminal_opacity }}
+
+selection_foreground {{ colors.background }}
+selection_background {{ colors.accent }}
+
+cursor               {{ colors.accent }}
+cursor_text_color    {{ colors.background }}
+url_color            {{ colors.accent }}
+
+active_border_color   {{ colors.accent }}
+inactive_border_color {{ colors.border }}
+bell_border_color     {{ colors.green }}
+
+tab_bar_background          {{ colors.background }}
+active_tab_foreground       {{ colors.background }}
+active_tab_background       {{ colors.accent }}
+inactive_tab_foreground     {{ colors.muted }}
+inactive_tab_background     {{ colors.background_alt }}
+
+color0  {{ ansi.normal.0 }}
+color1  {{ ansi.normal.1 }}
+color2  {{ ansi.normal.2 }}
+color3  {{ ansi.normal.3 }}
+color4  {{ ansi.normal.4 }}
+color5  {{ ansi.normal.5 }}
+color6  {{ ansi.normal.6 }}
+color7  {{ ansi.normal.7 }}
+color8  {{ ansi.bright.0 }}
+color9  {{ ansi.bright.1 }}
+color10 {{ ansi.bright.2 }}
+color11 {{ ansi.bright.3 }}
+color12 {{ ansi.bright.4 }}
+color13 {{ ansi.bright.5 }}
+color14 {{ ansi.bright.6 }}
+color15 {{ ansi.bright.7 }}

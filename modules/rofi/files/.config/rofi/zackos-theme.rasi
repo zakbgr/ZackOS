@@ -1,0 +1,20 @@
+/* GENERATED FILE. DO NOT EDIT. */
+/* Source: design/palette.toml (template: design/templates/rofi.rasi.tmpl) */
+/* Regenerate: python3 scripts/render-theme.py */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Import from a theme with:  @import "zackos-theme" */
+
+* {
+    zackos-background:             #090E12;
+    zackos-background-alt:         #111B22;
+    zackos-background-translucent: #090E12EB;
+    zackos-accent:                 #00D9FF;
+    zackos-green:                  #00E676;
+    zackos-text:                   #D8E5E9;
+    zackos-muted:                  #81949C;
+    zackos-border:                 #20323B;
+    zackos-warning:                #FFB300;
+    zackos-error:                  #FF5252;
+    zackos-radius:                 8px;
+    zackos-border-width:           2px;
+}

@@ -1,0 +1,16 @@
+/* GENERATED FILE. DO NOT EDIT. */
+/* Source: design/palette.toml (template: design/templates/waybar.css.tmpl) */
+/* Regenerate: python3 scripts/render-theme.py */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Import from style.css with:  @import "zackos-theme.css"; */
+
+@define-color zackos_background     #090E12;
+@define-color zackos_background_alt #111B22;
+@define-color zackos_accent         #00D9FF;
+@define-color zackos_green          #00E676;
+@define-color zackos_text           #D8E5E9;
+@define-color zackos_muted          #81949C;
+@define-color zackos_border         #20323B;
+@define-color zackos_warning        #FFB300;
+@define-color zackos_error          #FF5252;
+@define-color zackos_background_translucent rgba(9, 14, 18, 0.92);

@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Maps each template in design/templates/ to the generated file committed in the repository.
+# comment_open / comment_close define how the "GENERATED" header is written for that file type.
+
+[[target]]
+template      = "palette.sh.tmpl"
+output        = "lib/palette.sh"
+comment_open  = "#"
+comment_close = ""
+
+[[target]]
+template      = "kitty.conf.tmpl"
+output        = "modules/kitty/files/.config/kitty/zackos-theme.conf"
+comment_open  = "#"
+comment_close = ""
+
+[[target]]
+template      = "hyprland.conf.tmpl"
+output        = "modules/hypr/files/.config/hypr/zackos-theme.conf"
+comment_open  = "#"
+comment_close = ""
+
+[[target]]
+template      = "waybar.css.tmpl"
+output        = "modules/waybar/files/.config/waybar/zackos-theme.css"
+comment_open  = "/*"
+comment_close = "*/"
+
+[[target]]
+template      = "rofi.rasi.tmpl"
+output        = "modules/rofi/files/.config/rofi/zackos-theme.rasi"
+comment_open  = "/*"
+comment_close = "*/"
+
+[[target]]
+template      = "nvim-palette.lua.tmpl"
+output        = "modules/nvim/files/.config/nvim/lua/zackos/palette.lua"
+comment_open  = "--"
+comment_close = ""

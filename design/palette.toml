@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# ZackOS design system: the single source of truth for colors, fonts, geometry and effects.
+# Every themed file in the repository is generated from this file:
+#     python3 scripts/render-theme.py          # regenerate
+#     python3 scripts/render-theme.py --check  # fail if generated files are stale
+# Generated files are committed. Do not edit them by hand.
+
+[meta]
+name = "ZackOS Matrix Edition"
+schema = 1
+
+# Approved palette (from the project brief).
+[colors]
+background     = "#090E12"
+background_alt = "#111B22"
+accent         = "#00D9FF"   # primary: cyan
+green          = "#00E676"   # secondary: Matrix green
+text           = "#D8E5E9"
+muted          = "#81949C"
+border         = "#20323B"
+
+# PROPOSED in Phase 2, awaiting approval: status colors for battery, errors, warnings.
+[semantic]
+warning = "#FFB300"
+error   = "#FF5252"
+
+# PROPOSED in Phase 2, awaiting approval: 16-color terminal palette.
+# Index 0-7 normal, 0-7 bright. Order: black red green yellow blue cyan magenta white.
+[ansi]
+normal = ["#111B22", "#FF5252", "#00E676", "#FFB300", "#448AFF", "#00D9FF", "#B388FF", "#D8E5E9"]
+bright = ["#81949C", "#FF867F", "#69F0AE", "#FFD54F", "#82B1FF", "#84FFFF", "#D1C4E9", "#F2F8FA"]
+
+# Fonts are referenced by name only. They are NOT bundled (see THIRD_PARTY_NOTICES.md).
+[fonts]
+mono      = "JetBrains Mono"
+symbols   = "Symbols Nerd Font Mono"
+mono_size = 11
+
+[geometry]
+radius      = 8
+border_size = 2
+gap_inner   = 4
+gap_outer   = 8
+bar_height  = 32
+
+[effects]
+terminal_opacity        = 0.92
+window_opacity_active   = 0.97
+window_opacity_inactive = 0.90
+bar_opacity             = 0.92
+blur                    = true
+animation_fast_ms       = 120
+animation_normal_ms     = 220
