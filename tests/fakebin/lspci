@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Fake lspci for tests. FAKE_LSPCI: file whose content is printed.
+printf 'lspci %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+[[ -f "${FAKE_LSPCI:-/nonexistent}" ]] && cat "${FAKE_LSPCI}"
+exit 0

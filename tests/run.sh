@@ -13,6 +13,9 @@ step() { printf '\n== %s\n' "$*"; }
 step "generated theme files are up to date"
 python3 -I scripts/render-theme.py --check || failed=1
 
+step "package manifest policy"
+bash scripts/check-packages || failed=1
+
 step "python unit tests"
 python3 -I -m unittest discover -s tests -q || failed=1
 
@@ -23,7 +26,7 @@ done
 
 if command -v shellcheck >/dev/null 2>&1; then
     step "shellcheck"
-    shellcheck -x lib/*.sh scripts/detect-env tests/run.sh tests/shell/*.sh || failed=1
+    shellcheck -x lib/*.sh scripts/detect-env scripts/check-packages tests/run.sh tests/shell/*.sh tests/fakebin/* || failed=1
 else
     step "shellcheck (skipped: not installed)"
 fi

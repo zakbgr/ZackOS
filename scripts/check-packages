@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Validate packages/fedora44.tsv against the package policy. Read-only; used by tests and CI.
+set -euo pipefail
+
+REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/pkg.sh
+source "${REPO_ROOT}/lib/pkg.sh"
+
+if pkg_validate; then
+    echo "ok: package manifest is valid ($(pkg_rows | wc -l | tr -d ' ') packages)"
+else
+    exit 1
+fi

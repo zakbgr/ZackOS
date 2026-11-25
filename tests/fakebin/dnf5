@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Fake dnf5 for tests. It never changes anything and refuses every mutating command.
+# FAKE_LOG: file that records each call.  FAKE_DNF_ORIGINS: lines "name<TAB>origin".
+printf 'dnf5 %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+case "${1:-}" in
+--version) echo "dnf5 version 5.fake" ;;
+repoquery)
+    shift
+    names=()
+    while (($# > 0)); do
+        case "$1" in
+        --queryformat | --qf | --repo) shift ;;
+        -*) ;;
+        *) names+=("$1") ;;
+        esac
+        shift
+    done
+    for n in "${names[@]}"; do
+        [[ -f "${FAKE_DNF_ORIGINS:-/nonexistent}" ]] || continue
+        awk -F'\t' -v n="${n}" '$1 == n { print $1 "\t" $2 }' "${FAKE_DNF_ORIGINS}"
+    done
+    ;;
+install | upgrade | remove | downgrade | copr | history | config-manager | swap | reinstall)
+    echo "fake dnf5: refusing mutating command '$1'" >&2
+    exit 97
+    ;;
+*) exit 0 ;;
+esac

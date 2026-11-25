@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# ZackOS package manifest for Fedora 44 (x86_64). See docs/PACKAGE-POLICY.md.
+# Columns (tab-separated): name  source  group  optional  status  purpose
+#   source: fedora | copr:<owner>/<project>
+#   status: approved | candidate     (only approved fedora rows can be selected in Phase 3)
+# Protected packages (kitty zsh neovim fastfetch waybar rofi dolphin) must come from fedora.
+# COPR rows are allowed only in group hyprland-session and must stay "candidate" until the
+# owner approves unlocking COPR operations (ADR 0005).
+kitty	fedora	core-terminal	no	approved	Terminal emulator
+zsh	fedora	core-terminal	no	approved	Shell (login shell is never changed automatically)
+fastfetch	fedora	core-terminal	no	approved	System information
+neovim	fedora	editor	no	candidate	Terminal editor (Phase 6)
+waybar	fedora	bar-launcher	no	candidate	Status bar (Phase 5)
+rofi	fedora	bar-launcher	no	candidate	Launcher (Phase 5)
+dolphin	fedora	optional-dolphin	yes	approved	Optional file manager; pulls in KDE libraries on GNOME
+hyprland	copr:lionheartp/Hyprland	hyprland-session	no	candidate	Compositor, stable package only (never hyprland-git)
+xdg-desktop-portal-hyprland	copr:lionheartp/Hyprland	hyprland-session	no	candidate	Portal backend for the Hyprland session
+uwsm	copr:lionheartp/Hyprland	hyprland-session	yes	candidate	Optional UWSM-managed session; may also exist in Fedora, to be verified

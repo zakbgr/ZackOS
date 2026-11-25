@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Minimal assertion helpers (no external test framework needed).
 
+_HARNESS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 t_pass=0
 t_fail=0
 
@@ -34,6 +35,16 @@ make_tmp() {
     T_TMP="$(mktemp -d)"
     # shellcheck disable=SC2064
     trap "rm -rf -- '${T_TMP}'" EXIT
+}
+
+# use_fakebin: put fake dnf5/rpm/sudo/lspci first on PATH. They record calls in FAKE_LOG and
+# never change anything. Call after make_tmp.
+use_fakebin() {
+    FAKE_LOG="${T_TMP}/fake.log"
+    : >"${FAKE_LOG}"
+    export FAKE_LOG
+    PATH="$(cd -- "${_HARNESS_DIR}/../fakebin" && pwd):${PATH}"
+    export PATH
 }
 
 t_finish() {
