@@ -1,0 +1,8 @@
+@@HEADER@@
+# 24-bit color escape bodies (the part between "\e[" and "m"), used by zackos.zsh.
+typeset -g ZACKOS_FG_ACCENT='38;2;{{ colors.accent | rgbsc }}'
+typeset -g ZACKOS_FG_GREEN='38;2;{{ colors.green | rgbsc }}'
+typeset -g ZACKOS_FG_TEXT='38;2;{{ colors.text | rgbsc }}'
+typeset -g ZACKOS_FG_MUTED='38;2;{{ colors.muted | rgbsc }}'
+typeset -g ZACKOS_FG_WARNING='38;2;{{ semantic.warning | rgbsc }}'
+typeset -g ZACKOS_FG_ERROR='38;2;{{ semantic.error | rgbsc }}'
