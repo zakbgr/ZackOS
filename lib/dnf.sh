@@ -53,3 +53,9 @@ dnf_origin_class() {
     *) printf 'other' ;;
     esac
 }
+
+# dnf_all_installed_origins: "name<TAB>origin" for every installed package (read-only).
+dnf_all_installed_origins() {
+    "$(dnf_cmd)" repoquery --installed --queryformat '%{name}\t%{from_repo}\n' 2>/dev/null |
+        awk -F'\t' 'NF >= 2 { print $1 "\t" $2 }'
+}

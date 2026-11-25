@@ -16,8 +16,12 @@ repoquery)
         esac
         shift
     done
+    [[ -f "${FAKE_DNF_ORIGINS:-/nonexistent}" ]] || exit 0
+    if ((${#names[@]} == 0)); then
+        cat "${FAKE_DNF_ORIGINS}"
+        exit 0
+    fi
     for n in "${names[@]}"; do
-        [[ -f "${FAKE_DNF_ORIGINS:-/nonexistent}" ]] || continue
         awk -F'\t' -v n="${n}" '$1 == n { print $1 "\t" $2 }' "${FAKE_DNF_ORIGINS}"
     done
     ;;
