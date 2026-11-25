@@ -95,7 +95,10 @@ assert_eq "${sessions_before}" "$(find "${ZACKOS_STATE_DIR}/backups" -mindepth 1
 assert_eq "4" "$(wc -l <"$(mod_installed_file)" | tr -d ' ')" "installed.tsv unchanged"
 
 # ---- rollback: dry-run first
+before="$(tree "${HOME}")"; st_before="$(tree "${ZACKOS_STATE_DIR}")"
 ZACKOS_DRY_RUN=1 mod_rollback latest >/dev/null 2>&1
+assert_eq "${before}" "$(tree "${HOME}")" "dry-run rollback leaves HOME untouched"
+assert_eq "${st_before}" "$(tree "${ZACKOS_STATE_DIR}")" "dry-run rollback leaves state untouched"
 assert_link "${HOME}/.config/alpha/main.conf" "${M}/alpha/files/.config/alpha/main.conf"
 
 # ---- real rollback restores the exact original state (empty HOME)
@@ -104,9 +107,10 @@ assert_eq "0" "$?" "rollback rc"
 assert_eq "" "$(tree "${HOME}" | grep -v '^D \.$')" "HOME is empty again, created directories removed"
 assert_eq "0" "$(wc -l <"$(mod_installed_file)" | tr -d ' ')" "installed.tsv rows removed"
 assert_file "$(mod_installed_file).prev" "previous installed.tsv kept"
-displaced="$(find "${ZACKOS_STATE_DIR}/backups" -path '*displaced*' -type l | wc -l)"
-assert_eq "4" "${displaced}" "the four links were moved aside, not deleted"
-assert_rc 1 "nothing left to roll back" mod_rollback latest
+assert_file "${session}/manifest.tsv" "backup session record is kept"
+assert_rc 0 "second rollback is a no-op (idempotent)" mod_rollback latest
+assert_rc 0 "rollback of an already rolled back session is a no-op" mod_rollback "${session}"
+assert_eq "" "$(tree "${HOME}" | grep -v '^D \.$')" "still clean after repeated rollback"
 
 # ---- existing configs are never overwritten (conflict matrix)
 mkdir -p "${HOME}/.config/alpha/sub" "${HOME}/.local/share"
@@ -150,8 +154,25 @@ assert_no_path "${HOME}/.config/alpha/theme.conf" "link removed by rollback"
 assert_no_path "${HOME}/.config/alpha/sub" "created directory removed by rollback"
 assert_file "${HOME}/.config/alpha/main.conf" "pre-existing directory and file remain"
 
+# ---- ownership: rollback never touches what the user changed after deployment
+rm -rf "${HOME}/.config"
+mod_install alpha >/dev/null 2>&1
+rm "${HOME}/.config/alpha/main.conf"
+printf 'USER REPLACED\n' >"${HOME}/.config/alpha/main.conf"                 # replaced by user
+printf 'USER ADDED\n' >"${HOME}/.config/alpha/sub/mine.txt"                  # user file in our dir
+rm "${HOME}/.config/alpha/theme.conf"
+ln -s /somewhere/else "${HOME}/.config/alpha/theme.conf"                     # re-pointed link
+out="$(mod_rollback latest 2>&1)"
+assert_eq "USER REPLACED" "$(cat "${HOME}/.config/alpha/main.conf")" "replaced file preserved"
+assert_eq "USER ADDED" "$(cat "${HOME}/.config/alpha/sub/mine.txt")" "user file inside created dir preserved"
+assert_eq "/somewhere/else" "$(readlink "${HOME}/.config/alpha/theme.conf")" "re-pointed link preserved"
+assert_contains "${out}" "was changed after install, left untouched" "changes reported"
+assert_no_path "${HOME}/.config/alpha/sub/deep.conf" "our own link was removed"
+assert_rc 0 "non-empty created directory kept" test -d "${HOME}/.config/alpha/sub"
+rm -rf "${HOME}/.config"
+
 # ---- interrupted install: rollback still restores a clean state
-rm -r "${HOME}/.config"
+rm -rf "${HOME}/.config"
 mkdir -p "${T_TMP}/failbin"
 real_ln="$(command -v ln)"
 cat >"${T_TMP}/failbin/ln" <<EOF

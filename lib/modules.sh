@@ -274,13 +274,22 @@ mod_latest_session() {
 }
 
 # mod_rollback [session|latest]
+#
+# Ownership rule: a target is removed ONLY if it is still a symlink that points at the exact
+# module file we recorded in installed.tsv for this session. Anything else (a file the user put
+# there afterwards, a changed link, a directory that now holds user files) is left untouched.
+# Nothing is overwritten and no content is deleted: we only unlink our own symlinks and rmdir
+# directories we created that are now empty. Safe to run repeatedly.
 mod_rollback() {
-    local want="${1:-latest}" session base file d dirs=()
+    local want="${1:-latest}" session base file m target src sess _when d i
+    local removed=0 kept=0 gone=0
+    local -a rows=() dirs=()
     base="$(zackos_state_dir)/backups"
+    file="$(mod_installed_file)"
     if [[ "${want}" == "latest" ]]; then
         session="$(mod_latest_session)" || {
-            log_error "nothing to roll back: no recorded install"
-            return 1
+            log_info "nothing to roll back: no recorded install"
+            return 0
         }
     else
         session="${want}"
@@ -297,23 +306,52 @@ mod_rollback() {
         return 1
     }
 
-    backup_restore "${session}" || return $?
-    is_dry_run && return 0
+    if [[ -f "${file}" ]]; then
+        while IFS=$'\t' read -r m target src sess _when; do
+            [[ "${sess}" == "${session}" ]] && rows+=("${m}"$'\t'"${target}"$'\t'"${src}")
+        done <"${file}"
+    fi
+    if ((${#rows[@]} == 0)); then
+        log_info "nothing to roll back for ${session} (already rolled back)"
+        return 0
+    fi
 
-    # Remove directories that the install created, deepest first, only if empty.
+    for ((i = ${#rows[@]} - 1; i >= 0; i--)); do
+        IFS=$'\t' read -r m target src <<<"${rows[i]}"
+        if [[ -L "${target}" && "$(readlink -- "${target}")" == "${src}" ]]; then
+            if is_dry_run; then
+                log_dry "unlink ${target}"
+            else
+                unlink -- "${target}" && log_step "removed our link: ${target}"
+            fi
+            removed=$((removed + 1))
+        elif [[ -e "${target}" || -L "${target}" ]]; then
+            log_warn "${target} was changed after install, left untouched"
+            kept=$((kept + 1))
+        else
+            gone=$((gone + 1))
+        fi
+    done
+
     if [[ -f "${session}/created-dirs.tsv" ]]; then
         while IFS= read -r d; do dirs+=("${d}"); done <"${session}/created-dirs.tsv"
-        local i
         for ((i = ${#dirs[@]} - 1; i >= 0; i--)); do
-            rmdir -- "${dirs[i]}" 2>/dev/null && log_info "removed empty directory: ${dirs[i]}"
+            [[ -d "${dirs[i]}" && ! -L "${dirs[i]}" ]] || continue
+            if is_dry_run; then
+                [[ -z "$(find "${dirs[i]}" -mindepth 1 -print -quit 2>/dev/null)" ]] &&
+                    log_dry "rmdir ${dirs[i]} (empty)"
+            else
+                rmdir -- "${dirs[i]}" 2>/dev/null && log_info "removed empty directory: ${dirs[i]}"
+            fi
         done
     fi
 
-    file="$(mod_installed_file)"
-    if [[ -f "${file}" ]]; then
-        cp -p -- "${file}" "${file}.prev"
-        awk -F'\t' -v s="${session}" '$4 != s' "${file}" >"${file}.new"
-        mv -- "${file}.new" "${file}"
+    if is_dry_run; then
+        log_dry "would remove ${removed} link(s), leave ${kept} changed, ${gone} already gone"
+        return 0
     fi
-    log_info "rolled back: ${session}"
+    cp -p -- "${file}" "${file}.prev"
+    awk -F'\t' -v s="${session}" '$4 != s' "${file}" >"${file}.new"
+    mv -- "${file}.new" "${file}"
+    log_info "rolled back: removed ${removed}, left ${kept} changed, ${gone} already gone"
 }
