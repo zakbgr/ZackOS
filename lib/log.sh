@@ -19,6 +19,7 @@ readonly ZACKOS_EXIT_FAILURE=1
 readonly ZACKOS_EXIT_PREFLIGHT=2
 readonly ZACKOS_EXIT_DECLINED=3
 readonly ZACKOS_EXIT_BACKUP=4
+readonly ZACKOS_EXIT_LOCKED=5
 
 ZACKOS_LOG_FILE="${ZACKOS_LOG_FILE:-}"
 
@@ -27,8 +28,10 @@ zackos_state_dir() {
     printf '%s' "${ZACKOS_STATE_DIR:-${XDG_STATE_HOME:-${HOME}/.local/state}/zackos}"
 }
 
+# Dry-run is the default. Real changes happen only when ZACKOS_APPLY=1 (the --apply flag
+# sets it). ZACKOS_DRY_RUN=1 forces a dry run even when ZACKOS_APPLY=1.
 is_dry_run() {
-    [[ "${ZACKOS_DRY_RUN:-0}" == "1" ]]
+    [[ "${ZACKOS_DRY_RUN:-0}" == "1" || "${ZACKOS_APPLY:-0}" != "1" ]]
 }
 
 # log_init <command-name>: start a log file. Skipped in dry-run so that nothing is written.
