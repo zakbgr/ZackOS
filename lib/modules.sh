@@ -250,7 +250,7 @@ mod_install() {
 
 # mod_status: table  module<TAB>target<TAB>state(ok|missing|changed)
 mod_status() {
-    local file m target src session when state
+    local file m target src session _when state
     file="$(mod_installed_file)"
     [[ -f "${file}" ]] || return 0
     while IFS=$'\t' read -r m target src session _when; do
