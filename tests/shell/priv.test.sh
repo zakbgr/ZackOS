@@ -66,6 +66,7 @@ assert_eq "sudo dnf5 install one" "$(cat "${FAKE_LOG}")" "only the confirmed ste
 
 # ---- arguments with spaces and metacharacters stay single arguments
 : >"${FAKE_LOG}"
+# shellcheck disable=SC2016  # the $( ) must stay literal: it proves arguments are not evaluated
 run_step "yes\n" "odd" "undo" echo 'a b;c $(x)' >/dev/null
 assert_eq "sudo echo a b;c \$(x)" "$(cat "${FAKE_LOG}")" "arguments are passed through as given (not evaluated)"
 
