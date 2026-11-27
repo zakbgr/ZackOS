@@ -74,26 +74,33 @@ printf '{ "modules": [ \n' >/tmp/broken.jsonc
 as_user timeout 60 fastfetch -c /tmp/broken.jsonc --pipe >/dev/null 2>&1; rc=$?
 if ((rc != 0)); then record "R4b control: fastfetch rejects a broken config" PASS; else record "R4b control: fastfetch rejects a broken config" FAIL "validation proves nothing"; fi
 
-echo "-- kitty probe"
-as_user kitty --version 2>&1 | head -2 | sed 's/^/   | /'
-as_user kitty --help 2>&1 | grep -iE 'debug|config|dump' | head -8 | sed 's/^/   | /'
-as_user kitten --help 2>&1 | grep -iE 'debug|config' | head -5 | sed 's/^/   | /'
-out="$(as_user timeout 60 kitty --debug-config 2>&1)"; rc=$?
-echo "${out}" | head -5 | sed 's/^/   | /'
-if ((rc != 0)); then
-    record "R4c kitty parses the ZackOS config" SKIP "kitty --debug-config failed headless (rc=${rc}): ${out%%$'\n'*}"
-elif grep -qiE 'ignoring|invalid|error' <<<"${out}"; then
-    record "R4c kitty parses the ZackOS config" FAIL "$(grep -iE 'ignoring|invalid|error' <<<"${out}" | head -3)"
+kitty_check() { # <config file>: prints "<bad lines>"
+    as_user timeout 60 kitty +runpy "from kitty.config import load_config; b=[]; load_config('$1', accumulate_bad_lines=b); print('BAD', len(b))" 2>&1 | tail -3
+}
+printf 'bogus_option_zackos_ci 1\n' >/tmp/kitty-bad.conf
+chmod a+r /tmp/kitty-bad.conf
+good="$(kitty_check "${cfg}/kitty/kitty.conf")"
+bad="$(kitty_check /tmp/kitty-bad.conf)"
+echo "   good: ${good}"; echo "   control: ${bad}"
+if ! grep -q '^BAD [1-9]' <<<"${bad}"; then
+    record "R4c kitty parses the ZackOS config" SKIP "kitty load_config API not usable here, so nothing is claimed: ${bad}"
+elif grep -q '^BAD 0$' <<<"${good}"; then
+    record "R4c kitty parses the ZackOS config" PASS "(control config is flagged, ZackOS config has 0 bad lines)"
 else
-    record "R4c kitty parses the ZackOS config" PASS
+    record "R4c kitty parses the ZackOS config" FAIL "${good}"
 fi
 
 z=/home/zuser/.config/zackos/zsh
 if as_user zsh -n "${z}/zackos.zsh" && as_user zsh -n "${z}/zackos-theme.zsh"; then record "R4d zsh syntax of both files" PASS; else record "R4d zsh syntax of both files" FAIL; fi
 out="$(as_user env -i HOME=/home/zuser PATH="${PATH}" zsh -f -c "source ${z}/zackos.zsh; print -r -- \"\${ZACKOS_FG_ACCENT}\"" 2>&1)"
 if [[ "${out}" == "38;2;0;217;255" ]]; then record "R4e zsh sources the file and sets the palette" PASS; else record "R4e zsh sources the file and sets the palette" FAIL "${out}"; fi
-find /home/zuser -maxdepth 1 -printf '%M %u %p\n' | sed 's/^/   | /'
-if [[ ! -e /home/zuser/.zshrc ]]; then record "R4f no .zshrc created" PASS; else record "R4f no .zshrc created" FAIL; fi
+# Fedora's zsh package ships /etc/skel/.zshrc and .zprofile, copied by useradd. ZackOS must not
+# have modified them: they must still equal the skeleton (or be absent if the skeleton lacks them).
+zrc_ok=1
+for f in .zshrc .zprofile .zshenv; do
+    if [[ -e "/etc/skel/${f}" ]]; then [[ "$(sha256sum <"/etc/skel/${f}")" == "$(sha256sum <"/home/zuser/${f}")" ]] || zrc_ok=0; else [[ ! -e "/home/zuser/${f}" ]] || zrc_ok=0; fi
+done
+if ((zrc_ok)); then record "R4f zsh rc files untouched (equal the distro skeleton)" PASS; else record "R4f zsh rc files untouched (equal the distro skeleton)" FAIL; fi
 shell_before="$(getent passwd zuser | cut -d: -f7)"
 
 echo
@@ -107,6 +114,6 @@ if [[ "$(getent passwd zuser | cut -d: -f7)" == "${shell_before}" ]]; then recor
 echo
 echo "== R6 the full local suite on Fedora 44 (bash/python versions differ from CI Ubuntu)"
 dnf5 -y install python3 git ShellCheck >/dev/null 2>&1
-if (cd /home/zuser/zackos && as_user bash tests/run.sh >/tmp/suite.out 2>&1); then record "R6 tests/run.sh on Fedora 44" PASS "$(grep -c passed /tmp/suite.out) shell suites"; else record "R6 tests/run.sh on Fedora 44" FAIL; tail -25 /tmp/suite.out; fi
+if (cd /home/zuser/zackos && as_user bash tests/run.sh >/tmp/suite.out 2>&1); then record "R6 tests/run.sh on Fedora 44" PASS "$(grep -c passed /tmp/suite.out) shell suites"; else record "R6 tests/run.sh on Fedora 44" FAIL; grep -nE "FAIL|SC[0-9]+|Traceback|Error|error" /tmp/suite.out | head -40; fi
 
 finish "Fedora 44 real packages and CLI"
