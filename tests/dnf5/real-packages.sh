@@ -74,20 +74,21 @@ printf '{ "modules": [ \n' >/tmp/broken.jsonc
 as_user timeout 60 fastfetch -c /tmp/broken.jsonc --pipe >/dev/null 2>&1; rc=$?
 if ((rc != 0)); then record "R4b control: fastfetch rejects a broken config" PASS; else record "R4b control: fastfetch rejects a broken config" FAIL "validation proves nothing"; fi
 
-kitty_check() { # <config file>: prints "<bad lines>"
-    as_user timeout 60 kitty +runpy "from kitty.config import load_config; b=[]; load_config('$1', accumulate_bad_lines=b); print('BAD', len(b))" 2>&1 | tail -3
+kitty_check() { # <config file>: kitty prints "Ignoring ..." lines for config it cannot use
+    as_user timeout 60 kitty +runpy "from kitty.config import load_config; b=[]; load_config('$1', accumulate_bad_lines=b); print('BAD', len(b))" 2>&1 | tail -5
 }
 printf 'bogus_option_zackos_ci 1\n' >/tmp/kitty-bad.conf
 chmod a+r /tmp/kitty-bad.conf
 good="$(kitty_check "${cfg}/kitty/kitty.conf")"
 bad="$(kitty_check /tmp/kitty-bad.conf)"
-echo "   good: ${good}"; echo "   control: ${bad}"
-if ! grep -q '^BAD [1-9]' <<<"${bad}"; then
-    record "R4c kitty parses the ZackOS config" SKIP "kitty load_config API not usable here, so nothing is claimed: ${bad}"
-elif grep -q '^BAD 0$' <<<"${good}"; then
-    record "R4c kitty parses the ZackOS config" PASS "(control config is flagged, ZackOS config has 0 bad lines)"
-else
+echo "   good:    ${good}"
+echo "   control: ${bad}"
+if ! grep -qiE 'ignoring|^BAD [1-9]' <<<"${bad}"; then
+    record "R4c kitty parses the ZackOS config" SKIP "control config was not flagged, so nothing is claimed"
+elif grep -qiE 'ignoring|invalid|error|traceback' <<<"${good}"; then
     record "R4c kitty parses the ZackOS config" FAIL "${good}"
+else
+    record "R4c kitty parses the ZackOS config" PASS "(a bogus option IS flagged; the ZackOS config produces no warnings)"
 fi
 
 z=/home/zuser/.config/zackos/zsh

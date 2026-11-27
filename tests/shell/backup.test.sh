@@ -110,4 +110,14 @@ assert_eq "${before}" "${after}" "dry-run backup writes nothing"
 # --- backup_list
 assert_contains "$(backup_list)" "${ZACKOS_STATE_DIR}/backups/" "backup_list shows sessions"
 
+# ---- regression: directory backups must not need diffutils (absent on a minimal Fedora)
+mkdir -p "${T_TMP}/nodiff"
+printf '#!/bin/sh\necho "diff: command not found" >&2\nexit 127\n' >"${T_TMP}/nodiff/diff"
+cp "${T_TMP}/nodiff/diff" "${T_TMP}/nodiff/cmp"
+chmod +x "${T_TMP}/nodiff/diff" "${T_TMP}/nodiff/cmp"
+mkdir -p "${FAKE_HOME}/.config/nodiffdir/sub"
+printf 'x\n' >"${FAKE_HOME}/.config/nodiffdir/sub/f"
+backup_begin >/dev/null 2>&1
+assert_rc 0 "dir backup works without diff/cmp" env PATH="${T_TMP}/nodiff:${PATH}" bash -c "source '${HERE}/../../lib/backup.sh'; BACKUP_DIR='${BACKUP_DIR}'; backup_path '${FAKE_HOME}/.config/nodiffdir'"
+
 t_finish

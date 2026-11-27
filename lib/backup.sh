@@ -67,6 +67,25 @@ _backup_in_manifest() {
     return 1
 }
 
+# _backup_tree_digest <dir>: digest of names, types, link targets and file contents, using only
+# coreutils/findutils (diffutils may be absent on a minimal Fedora; found by the Fedora 44 CI job).
+_backup_tree_digest() {
+    (
+        cd -- "$1" || exit 1
+        find . -print0 | LC_ALL=C sort -z | while IFS= read -r -d '' p; do
+            if [[ -L "${p}" ]]; then
+                printf 'L %s -> %s\n' "${p}" "$(readlink -- "${p}")"
+            elif [[ -f "${p}" ]]; then
+                printf 'F %s %s\n' "${p}" "$(sha256sum <"${p}" | cut -d' ' -f1)"
+            elif [[ -d "${p}" ]]; then
+                printf 'D %s\n' "${p}"
+            else
+                printf 'O %s\n' "${p}"
+            fi
+        done | sha256sum
+    )
+}
+
 backup_path() {
     local path="${1:?path required}" type rel sum="-" dest
     path="${path%/}"
@@ -117,7 +136,7 @@ backup_path() {
             }
             ;;
         dir)
-            diff -rq -- "${path}" "${dest}" >/dev/null || {
+            [[ "$(_backup_tree_digest "${path}")" == "$(_backup_tree_digest "${dest}")" ]] || {
                 log_error "directory copy differs from original: ${path}"
                 return "${ZACKOS_EXIT_BACKUP}"
             }
