@@ -187,3 +187,27 @@ class FastfetchConfig(unittest.TestCase):
         mods = [m if isinstance(m, str) else m["type"] for m in self.load()["modules"]]
         for needed in ("kernel", "uptime", "packages", "shell", "terminal", "de", "wm", "cpu", "gpu", "memory", "disk"):
             self.assertIn(needed, mods)
+
+
+class KittyTheme(unittest.TestCase):
+    OUTPUT = ROOT / "modules" / "kitty" / "files" / ".config" / "kitty" / "zackos-theme.conf"
+
+    def entries(self):
+        for line in self.OUTPUT.read_text().splitlines():
+            if line.strip() and not line.startswith("#"):
+                yield line.split(None, 1)
+
+    def test_every_line_is_key_value(self):
+        for parts in self.entries():
+            self.assertEqual(len(parts), 2, parts)
+
+    def test_color_options_are_valid_hex(self):
+        for key, value in self.entries():
+            if key.endswith(("color", "foreground", "background")) or re.fullmatch(r"color\d+", key):
+                self.assertRegex(value, r"^#[0-9A-F]{6}$", key)
+
+    def test_mark_text_is_always_the_dark_background(self):
+        bg = good_palette()["colors"]["background"]
+        values = dict(self.entries())
+        for n in (1, 2, 3):
+            self.assertEqual(values[f"mark{n}_foreground"], bg)

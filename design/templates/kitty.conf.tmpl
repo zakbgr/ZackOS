@@ -14,6 +14,18 @@ selection_background {{ colors.accent }}
 cursor               {{ colors.accent }}
 cursor_text_color    {{ colors.background }}
 url_color            {{ colors.accent }}
+url_style            curly
+
+# Search / mark highlights (kitty's "mark" feature): foreground is always the dark background.
+mark1_foreground     {{ colors.background }}
+mark1_background     {{ colors.accent }}
+mark2_foreground     {{ colors.background }}
+mark2_background     {{ colors.green }}
+mark3_foreground     {{ colors.background }}
+mark3_background     {{ semantic.warning }}
+
+# Only used when a user turns the visual bell on (enable_audio_bell stays off in kitty.conf).
+visual_bell_color    {{ semantic.warning }}
 
 active_border_color   {{ colors.accent }}
 inactive_border_color {{ colors.border }}
@@ -24,6 +36,8 @@ active_tab_foreground       {{ colors.background }}
 active_tab_background       {{ colors.accent }}
 inactive_tab_foreground     {{ colors.muted }}
 inactive_tab_background     {{ colors.background_alt }}
+active_tab_font_style       bold
+inactive_tab_font_style     normal
 
 color0  {{ ansi.normal.0 }}
 color1  {{ ansi.normal.1 }}
