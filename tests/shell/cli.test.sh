@@ -110,23 +110,51 @@ assert_rc 1 "hyprland install refused with --apply" bash "${ZACKOS}" packages in
 assert_rc 1 "candidate package names are not accepted as arguments" bash "${ZACKOS}" packages install hyprland --apply
 assert_eq "0" "$(sudo_calls)" "no sudo for refused installs"
 
-# ---- packages install --apply: one confirmation per package, exact argv, journal
+# ---- packages install --apply: one ZackOS authorization per package, exact argv, journal
 : >"${FAKE_LOG}"
 printf 'yes\nyes\nyes\n' >"${ZACKOS_PRIV_INPUT}"
-bash "${ZACKOS}" packages install --apply >/dev/null 2>&1
+out="$(bash "${ZACKOS}" packages install --apply 2>&1)"
 assert_eq "3" "$(sudo_calls)" "three confirmed steps, three sudo calls"
-assert_contains "$(grep '^sudo ' "${FAKE_LOG}")" "sudo dnf5 install -- kitty" "exact install command"
-assert_eq "0" "$(grep '^sudo ' "${FAKE_LOG}" | grep -c -E ' -y|--assumeyes|copr|remove')" "no -y, no copr, no remove"
+assert_eq "3" "$(grep -c 'Type "yes" to run this privileged step' <<<"${out}")" "three separate ZackOS authorization prompts"
+sudo_lines="$(grep '^sudo ' "${FAKE_LOG}")"
+assert_contains "${sudo_lines}" "sudo dnf5 install -y -- kitty" "kitty: install -y after authorization"
+assert_contains "${sudo_lines}" "sudo dnf5 install -y -- zsh" "zsh: install -y after authorization"
+assert_contains "${sudo_lines}" "sudo dnf5 install -y -- fastfetch" "fastfetch: install -y after authorization"
+# -y appears ONLY in those three install commands: every sudo line has exactly that shape ...
+assert_eq "0" "$(grep -c -v -E '^sudo dnf5 install -y -- (kitty|zsh|fastfetch)$' <<<"${sudo_lines}")" "no other sudo command was run"
+# ... and no other dnf5 invocation (the read-only queries) carries -y/--assumeyes
+assert_eq "0" "$(grep '^dnf5 ' "${FAKE_LOG}" | grep -c -E ' -y|--assumeyes')" "read-only dnf5 calls never get -y"
+assert_eq "0" "$(grep -c -E 'copr|remove|erase|config-manager|downgrade' <<<"${sudo_lines}")" "no copr, no removal, no other mutating verb"
 assert_eq "3" "$(grep -c $'\tok$' "${ZACKOS_STATE_DIR}/priv-journal.tsv")" "journal has three ok entries"
+assert_contains "$(cat "${ZACKOS_STATE_DIR}/priv-journal.tsv")" $'Install kitty from Fedora\tsudo dnf5 install -y -- kitty\t' "journal records the exact command with -y"
+assert_contains "$(cat "${ZACKOS_STATE_DIR}/priv-journal.tsv")" "never run automatically" "journal keeps the manual undo note"
 
-# declining stops further steps
+# source-level guard: the only non-comment line in bin/ and lib/ that passes -y/--assumeyes to dnf is the fixed one
+assert_eq "1" "$(grep -rn -E -- '(^|[^[:alnum:]-])(-y|--assumeyes)([^[:alnum:]-]|$)' "${REPO}/bin" "${REPO}/lib" | grep -v -E ':[0-9]+:[[:space:]]*#' | grep -c .)" "exactly one non-comment -y/--assumeyes in bin/ and lib/"
+
+# declining stops further steps: the first answer "no" means zero sudo calls and one prompt only
 : >"${FAKE_LOG}"
 printf 'no\nyes\nyes\n' >"${ZACKOS_PRIV_INPUT}"
-unset _ZACKOS_PRIV_FD
+rc=0
+out="$(bash "${ZACKOS}" packages install --apply 2>&1)" || rc=$?
+assert_eq "3" "${rc}" "declined step exits 3"
+assert_eq "0" "$(sudo_calls)" "declined step runs nothing"
+assert_eq "1" "$(grep -c 'Type "yes" to run this privileged step' <<<"${out}")" "declining stops the run: no further prompts"
+
+# declining the second package: the first ran, nothing after it
+: >"${FAKE_LOG}"
+printf 'yes\nno\nyes\n' >"${ZACKOS_PRIV_INPUT}"
 rc=0
 bash "${ZACKOS}" packages install --apply >/dev/null 2>&1 || rc=$?
-assert_eq "3" "${rc}" "declined step exits 3"
-assert_eq "0" "$(sudo_calls)" "declined step runs nothing and stops the run"
+assert_eq "3" "${rc}" "declining the second step exits 3"
+assert_eq "1" "$(sudo_calls)" "only the first, authorized package was installed"
+assert_contains "$(grep '^sudo ' "${FAKE_LOG}")" "sudo dnf5 install -y -- kitty" "the authorized package ran with -y"
+
+# dry-run: shows the command including -y but runs nothing
+: >"${FAKE_LOG}"
+out="$(bash "${ZACKOS}" packages install 2>&1)"
+assert_contains "${out}" "sudo dnf5 install -y -- kitty" "dry-run shows the exact command"
+assert_eq "0" "$(sudo_calls)" "dry-run runs no sudo"
 
 # installed-from-COPR conflict is reported and never touched
 printf 'kitty\n' >"${FAKE_RPM_INSTALLED}"

@@ -282,9 +282,12 @@ pkg_install_selected() {
             rc=1
             ;;
         install)
-            # No -y: dnf5 shows its own transaction summary and asks as well.
+            # -y is safe here and only here: priv_step has already shown the exact command and
+            # received an explicit "yes" for this one package. Without -y, dnf5 asks a second
+            # "Is this ok [y/N]" question that the scripted run cannot answer, and the transaction
+            # is aborted. Every other dnf5 call in ZackOS is read-only and never gets -y.
             priv_step "Install ${name} from Fedora" "sudo dnf5 remove ${name} (never run automatically)" \
-                "$(dnf_cmd)" install -- "${name}"
+                "$(dnf_cmd)" install -y -- "${name}"
             step_rc=$?
             ((step_rc == 0)) || {
                 rc="${step_rc}"

@@ -117,4 +117,33 @@ echo "== R6 the full local suite on Fedora 44 (bash/python versions differ from 
 dnf5 -y install python3 git ShellCheck >/dev/null 2>&1
 if (cd /home/zuser/zackos && as_user bash tests/run.sh >/tmp/suite.out 2>&1); then record "R6 tests/run.sh on Fedora 44" PASS "$(grep -c passed /tmp/suite.out) shell suites"; else record "R6 tests/run.sh on Fedora 44" FAIL; grep -nE "FAIL|SC[0-9]+|Traceback|Error|error" /tmp/suite.out | head -40; fi
 
+echo
+echo "== R7 real dnf5 install through ZackOS (regression: dnf5's own second prompt aborted scripted installs)"
+# Test setup in the disposable container (not ZackOS): sudo for the CI user, and zsh absent.
+dnf5 -y install sudo >/dev/null 2>&1
+printf 'zuser ALL=(ALL) NOPASSWD: ALL\n' >/etc/sudoers.d/zuser-ci
+chmod 0440 /etc/sudoers.d/zuser-ci
+dnf5 -y remove zsh >/dev/null 2>&1
+if rpm -q zsh >/dev/null 2>&1; then
+    record "R7 setup: zsh removed for the test" FAIL "could not remove zsh"
+else
+    # Control: without -y and without a terminal, dnf5's own "Is this ok [y/N]" aborts the install.
+    as_user sudo dnf5 install -- zsh </dev/null >/tmp/noy.out 2>&1; rc=$?
+    if rpm -q zsh >/dev/null 2>&1; then
+        record "R7a control: dnf5 install without -y is aborted" SKIP "control invalid, dnf5 installed without -y (rc=${rc})"
+        dnf5 -y remove zsh >/dev/null 2>&1
+    else
+        record "R7a control: dnf5 install without -y is aborted" PASS "(rc=${rc}, zsh not installed)"
+    fi
+    # The real path: ZackOS asks once for zsh, receives "yes", runs sudo dnf5 install -y -- zsh.
+    printf 'yes\n' >/tmp/zackos-answers
+    chmod a+r /tmp/zackos-answers
+    as_user env ZACKOS_PRIV_INPUT=/tmp/zackos-answers bash "${Z}" packages install --apply >/tmp/zackos-install.out 2>&1; rc=$?
+    sed 's/^/   | /' /tmp/zackos-install.out | tail -12
+    if ((rc == 0)) && rpm -q zsh >/dev/null 2>&1; then record "R7b zackos packages install --apply installs zsh with real dnf5" PASS; else record "R7b zackos packages install --apply installs zsh with real dnf5" FAIL "rc=${rc}"; fi
+    if grep -qF 'sudo dnf5 install -y -- zsh' /home/zuser/.local/state/zackos/priv-journal.tsv && grep -q $'\tok$' /home/zuser/.local/state/zackos/priv-journal.tsv; then record "R7c journal records the command and ok" PASS; else record "R7c journal records the command and ok" FAIL; fi
+    if [[ "$(grep -c 'Type "yes"' /tmp/zackos-install.out)" == "1" ]]; then record "R7d exactly one ZackOS authorization for the one missing package" PASS; else record "R7d exactly one ZackOS authorization for the one missing package" FAIL; fi
+    if [[ "$( (source "${REPO_ROOT}/lib/dnf.sh"; dnf_origin_class "$(dnf_installed_origin zsh)") )" == "fedora" ]]; then record "R7e installed zsh comes from Fedora" PASS; else record "R7e installed zsh comes from Fedora" FAIL; fi
+fi
+
 finish "Fedora 44 real packages and CLI"
