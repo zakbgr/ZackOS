@@ -37,3 +37,16 @@ jobs:
         run: dnf5 -y install git
       - uses: actions/checkout@v4
       - run: bash tests/dnf5/real-packages.sh
+
+  terminal:
+    name: terminal experience (real Fastfetch, Zsh, Kitty)
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:44
+    env:
+      ZACKOS_CI_CONTAINER: "1"
+    steps:
+      - name: Tools for checkout
+        run: dnf5 -y install git
+      - uses: actions/checkout@v4
+      - run: bash tests/terminal/fedora44.sh
