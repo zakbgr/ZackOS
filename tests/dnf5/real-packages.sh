@@ -74,6 +74,10 @@ printf '{ "modules": [ \n' >/tmp/broken.jsonc
 as_user timeout 60 fastfetch -c /tmp/broken.jsonc --pipe >/dev/null 2>&1; rc=$?
 if ((rc != 0)); then record "R4b control: fastfetch rejects a broken config" PASS; else record "R4b control: fastfetch rejects a broken config" FAIL "validation proves nothing"; fi
 
+echo "-- kitty probe"
+as_user kitty --version 2>&1 | head -2 | sed 's/^/   | /'
+as_user kitty --help 2>&1 | grep -iE 'debug|config|dump' | head -8 | sed 's/^/   | /'
+as_user kitten --help 2>&1 | grep -iE 'debug|config' | head -5 | sed 's/^/   | /'
 out="$(as_user timeout 60 kitty --debug-config 2>&1)"; rc=$?
 echo "${out}" | head -5 | sed 's/^/   | /'
 if ((rc != 0)); then
@@ -88,6 +92,7 @@ z=/home/zuser/.config/zackos/zsh
 if as_user zsh -n "${z}/zackos.zsh" && as_user zsh -n "${z}/zackos-theme.zsh"; then record "R4d zsh syntax of both files" PASS; else record "R4d zsh syntax of both files" FAIL; fi
 out="$(as_user env -i HOME=/home/zuser PATH="${PATH}" zsh -f -c "source ${z}/zackos.zsh; print -r -- \"\${ZACKOS_FG_ACCENT}\"" 2>&1)"
 if [[ "${out}" == "38;2;0;217;255" ]]; then record "R4e zsh sources the file and sets the palette" PASS; else record "R4e zsh sources the file and sets the palette" FAIL "${out}"; fi
+find /home/zuser -maxdepth 1 -printf '%M %u %p\n' | sed 's/^/   | /'
 if [[ ! -e /home/zuser/.zshrc ]]; then record "R4f no .zshrc created" PASS; else record "R4f no .zshrc created" FAIL; fi
 shell_before="$(getent passwd zuser | cut -d: -f7)"
 
