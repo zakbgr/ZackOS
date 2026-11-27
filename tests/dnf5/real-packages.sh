@@ -17,6 +17,19 @@ dnf5 -y install kitty zsh fastfetch jq util-linux >/dev/null 2>&1 || {
 record "R0 install kitty zsh fastfetch from Fedora" PASS "$(rpm -q kitty zsh fastfetch | tr '\n' ' ')"
 
 echo
+echo "== R1-probe: which dnf5 query/info fields report the origin of an installed package?"
+for tag in from_repo repoid reponame; do
+    echo "-- queryformat %{${tag}}"
+    dnf5 repoquery --installed --queryformat "%{name}\t%{${tag}}\n" kitty 2>&1 | head -5 | sed 's/^/   | /'
+done
+echo "-- repoquery --info (origin lines)"
+dnf5 repoquery --installed --info kitty 2>&1 | grep -iE 'repo|from|origin' | head -8 | sed 's/^/   | /'
+echo "-- dnf5 info --installed"
+dnf5 info --installed kitty 2>&1 | grep -iE 'repo|from|origin' | head -8 | sed 's/^/   | /'
+echo "-- dnf5 history info last"
+dnf5 history info 2>&1 | head -12 | sed 's/^/   | /'
+
+echo
 echo "== R1 origin classification against real repository IDs"
 for p in kitty zsh fastfetch; do
     o="$( (source "${REPO_ROOT}/lib/dnf.sh"; dnf_installed_origin "${p}") )"
