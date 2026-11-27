@@ -3,13 +3,19 @@
 // Colors are raw 24-bit SGR bodies, so no terminal theme is required.
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  // ZackOS is an environment on Fedora: the logo is ZackOS's own, and the "os" module below
+  // keeps reporting the real operating system (Fedora Linux). The logo is plain ASCII (no
+  // Nerd Font glyphs): $1 = accent (cyan), $2 = green "digital rain".
   "logo": {
-    "type": "small",
-    "color": { "1": "38;2;{{ colors.accent | rgbsc }}", "2": "38;2;{{ colors.green | rgbsc }}" }
+    "type": "data",
+    "source": "$1 ZZZZZZZZZZZZZZZ   $2 1  0\n$1       ZZZZZZ     $2   0 1\n$1      ZZZZZZ      $2 1   0\n$1     ZZZZZZ       $2  0 1\n$1    ZZZZZZ        $2 1   1\n$1   ZZZZZZ         $2   0\n$1 ZZZZZZZZZZZZZZZ   $2 0  1\n",
+    "color": { "1": "38;2;{{ colors.accent | rgbsc }}", "2": "38;2;{{ colors.green | rgbsc }}" },
+    "padding": { "right": 3 }
   },
   "display": {
     "separator": "  ",
     "color": {
+      "output": "38;2;{{ colors.text | rgbsc }}",
       "keys": "38;2;{{ colors.accent | rgbsc }}",
       "title": "38;2;{{ colors.green | rgbsc }}",
       "separator": "38;2;{{ colors.muted | rgbsc }}"
@@ -18,7 +24,9 @@
   "modules": [
     "title",
     "separator",
+    { "type": "custom", "key": "ZackOS", "format": "Matrix Edition" },
     "os",
+    "host",
     "kernel",
     "uptime",
     "packages",
@@ -29,6 +37,9 @@
     "cpu",
     "gpu",
     "memory",
-    "disk"
+    "disk",
+    "battery",
+    "break",
+    "colors"
   ]
 }

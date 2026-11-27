@@ -37,7 +37,7 @@ Status: Phase 3. Approved by the project owner on 2026-11-25 with the changes re
 | 3 | Audit: installed packages whose origin is a COPR but are not in the allowlist, or protected packages from a COPR | Implemented with stubs; contract-tested against real DNF5 in CI |
 | 4 | Default priority left unchanged | Policy |
 | 5 | Locked enable/disable, individual confirmation for every privileged step | Implemented |
-| 6 | Dependency-closure check: every COPR-provided dependency of an allowlisted package must itself be allowlisted | Pure function implemented; real closure computed before Phase 4 |
+| 6 | Dependency-closure check: every COPR-provided dependency of an allowlisted package must itself be allowlisted | Pure function implemented; real closure computed before Phase 5 |
 
 ### What DNF5 documentation says (verified)
 
@@ -72,9 +72,9 @@ Run: https://github.com/zakbgr/ZackOS/actions/runs/45981701855 (commit af5248a):
 
 **Conclusion: repository isolation is NOT declared complete.** The DNF5 layer behaves as designed in every scenario that could be exercised, but PackageKit, `Provides:`-based shadowing and the real COPR remain unverified, and the owner has not run anything on the ThinkPad.
 
-## 4. Allowlist production (before Phase 4)
+## 4. Allowlist production (before Phase 5)
 
-Before Phase 4, the project will present the complete COPR dependency allowlist and justify every package that must originate from the COPR. The method: preview the transaction (`--assumeno`) on the owner's machine with the repository supplied temporarily, list each COPR-sourced package it would pull, and review the list with the owner. Nothing is guessed. Until then the Hyprland rows stay `candidate`.
+Before Phase 5, the project will present the complete COPR dependency allowlist and justify every package that must originate from the COPR. The method: preview the transaction (`--assumeno`) on the owner's machine with the repository supplied temporarily, list each COPR-sourced package it would pull, and review the list with the owner. Nothing is guessed. Until then the Hyprland rows stay `candidate`.
 
 ## 5. Rollback of package changes
 

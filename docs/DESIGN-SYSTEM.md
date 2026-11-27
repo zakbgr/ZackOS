@@ -41,7 +41,7 @@ Run `python3 scripts/render-theme.py --report`. Current ratios: text on backgrou
 | `modules/rofi/files/.config/rofi/zackos-theme.rasi` | `rofi.rasi.tmpl` | Rofi, via `@import` |
 | `modules/nvim/files/.config/nvim/lua/zackos/palette.lua` | `nvim-palette.lua.tmpl` | Neovim, via `require("zackos.palette")` |
 
-The mapping is in `design/targets.toml`. These are fragments only: the main configs that include them arrive in Phases 3 to 6. None of them is installed to your home directory yet.
+The mapping is in `design/targets.toml`. These are fragments only: the main configs that include them arrive in Phases 3 to 7. None of them is installed to your home directory yet.
 
 ## Regenerating
 

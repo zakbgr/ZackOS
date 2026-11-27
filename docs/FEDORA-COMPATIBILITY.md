@@ -30,7 +30,7 @@ Please paste the output back.
 2. **The long-standing `solopasha/hyprland` COPR appears abandoned** and does not list Fedora 44 builds. Do not depend on it.
 3. **COPR packages are unofficial**: no Fedora review, maintainers can disappear, and library version mismatches between COPRs can break `dnf upgrade`. Mixing packages from two Hyprland COPRs is a known source of dependency conflicts.
 4. **Hyprland 0.55 introduced a Lua-based config layer that needs Lua 5.5**, while Fedora ships Lua 5.4. COPR builds work around this by vendoring libraries. Config syntax may change between Hyprland releases, so ZackOS must pin a tested version.
-5. **`xdg-desktop-portal-hyprland` has reported startup problems on Fedora 44** shortly after release, attributed to a portal autostart issue. Screen sharing and file dialogs depend on this. Workarounds were discussed (`dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP` on session start). **VERIFY** current status before Phase 4.
+5. **`xdg-desktop-portal-hyprland` has reported startup problems on Fedora 44** shortly after release, attributed to a portal autostart issue. Screen sharing and file dialogs depend on this. Workarounds were discussed (`dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP` on session start). **VERIFY** current status before Phase 5.
 6. **Fedora 44 is Wayland-first**: GNOME 50 ships without an X.Org session in GDM, and KDE Plasma 6.6 is Wayland. This suits Hyprland but means any X11-only tool needs XWayland.
 7. **Fedora 44 KDE edition replaced SDDM with Plasma Login Manager.** How a third-party Wayland session is listed there needs checking if you use the KDE edition.
 8. **PackageKit moved to libdnf5**, and `dnf` is DNF5. Scripts must use DNF5 syntax and not rely on old `dnf` plugin behavior. **VERIFY** exact `copr` plugin commands on your system.
@@ -50,7 +50,7 @@ Please paste the output back.
 
 ## Design consequences
 
-- **Pin Hyprland** to one version from the `lionheartp/Hyprland` COPR (ADR 0001) and record it in `packages/fedora44.txt` once Phase 4 starts.
+- **Pin Hyprland** to one version from the `lionheartp/Hyprland` COPR (ADR 0001) and record it in `packages/fedora44.txt` once Phase 5 starts.
 - **The COPR also carries `kitty` and `waybar-git`.** Restrict it to an allowlist so it cannot shadow Fedora's official packages (the DNF5 `includepkgs` option needs verifying).
 - **Never mix** Hyprland ecosystem packages from different COPRs.
 - **Install the session file only through the package**, to avoid ZackOS writing to `/usr/share` itself.

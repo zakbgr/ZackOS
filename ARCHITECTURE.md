@@ -54,7 +54,7 @@ ZackOS/
 │   ├── backup.sh             #   backup, verify, restore (never deletes)
 │   └── palette.sh            #   GENERATED from palette.toml
 ├── bin/
-│   └── zackos                # single CLI entry point (Phase 7)
+│   └── zackos                # single CLI entry point (introduced in Phase 3, completed in Phase 8)
 ├── scripts/
 │   ├── render-theme.py       # palette -> generated files (--check, --report)
 │   └── detect-env            # read-only environment report
@@ -64,7 +64,7 @@ ZackOS/
 └── .github/workflows/        # CI: runs tests/run.sh
 ```
 
-`modules/` currently holds only generated theme fragments. Directories for later phases (`packages/`, `bin/`) appear when needed. CI was brought forward from Phase 8 because the generated-files check is part of the design-system guarantee.
+`modules/` currently holds only generated theme fragments. Directories for later phases (`packages/`, `bin/`) appear when needed. CI was brought forward from Phase 9 because the generated-files check is part of the design-system guarantee.
 
 ## 4. Configuration management
 

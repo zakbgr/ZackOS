@@ -61,11 +61,11 @@ Defined in `lib/priv.sh` (ADR 0006): each step shows the command and its undo, r
 - Installing Hyprland, UWSM or any COPR package.
 - Registering sessions in GDM, or any display-manager change.
 
-Before Phase 4 these require: the verified allowlist (PACKAGE-POLICY section 4), the verified Hyprland version and its configuration syntax, verified session files for plain and UWSM sessions, and the owner's approval.
+Before Phase 5 these require: the verified allowlist (PACKAGE-POLICY section 4), the verified Hyprland version and its configuration syntax, verified session files for plain and UWSM sessions, and the owner's approval.
 
 ## 7. Intel UHD 620 (ThinkPad T480s)
 
-The hardware is taken as stated by the owner and is not assumed beyond that. `doctor` reports the GPU it detects (from `lspci` or `/sys/class/drm`) and whether TLP is present. Documented upstream guidance used later: disabling blur and similar effects reduces power use, and with TLP a higher `INTEL_GPU_MIN_FREQ_ON_AC/BAT` reduces stutter on Intel iGPUs. Defaults for blur and animation are decided from on-device results in Phase 4.
+The hardware is taken as stated by the owner and is not assumed beyond that. `doctor` reports the GPU it detects (from `lspci` or `/sys/class/drm`) and whether TLP is present. Documented upstream guidance used later: disabling blur and similar effects reduces power use, and with TLP a higher `INTEL_GPU_MIN_FREQ_ON_AC/BAT` reduces stutter on Intel iGPUs. Defaults for blur and animation are decided from on-device results in Phase 5.
 
 ## 8. Portals and sessions (later phases)
 

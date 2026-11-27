@@ -1,7 +1,7 @@
 # ADR 0001: Hyprland comes from the `lionheartp/Hyprland` COPR
 
 - Status: accepted by the project owner on 2026-11-24, with the conditions below
-- Phase: decision recorded in Phase 2; first use in Phase 4 (no install script exists yet)
+- Phase: decision recorded in Phase 2; first use in Phase 5 (no install script exists yet)
 
 ## Context
 
@@ -31,6 +31,8 @@ Hyprland is not in Fedora's official repositories for Fedora 43/44. Building Hyp
 1. Use only the COPR packages ZackOS needs, from the **stable** `hyprland` package. Never the `*-git` packages.
 2. Never mix Hyprland-ecosystem packages from another COPR.
 3. The COPR also ships `kitty` and `waybar-git`. ZackOS takes `kitty` and `waybar` from Fedora's official repos unless a later ADR says otherwise. The installer will restrict the COPR repo to an explicit package allowlist (DNF5 repo option `includepkgs`, **to be verified**) so it cannot replace official packages.
-4. The COPR is enabled only by an explicit, user-approved step in Phase 4; the installer prints the exact commands and asks first.
+4. The COPR is enabled only by an explicit, user-approved step in Phase 5; the installer prints the exact commands and asks first.
 5. If the F44 chroot or the stable packages disappear, the installer stops and reports. It does not switch to another repository on its own.
-6. Pin the tested `hyprland` version in `packages/fedora44.txt` once Phase 4 starts.
+6. Pin the tested `hyprland` version in `packages/fedora44.txt` once Phase 5 starts.
+
+> Renumbering note (2026-11-27): "Phase 4" in this record meant the Hyprland phase, which is now Phase 5 (Phase 4 became the terminal experience). See ROADMAP.md.
