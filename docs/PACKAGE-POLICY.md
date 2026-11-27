@@ -46,20 +46,31 @@ Status: Phase 3. Approved by the project owner on 2026-11-25 with the changes re
 - `dnf5 copr enable` writes a `.repo` file under `/etc/yum.repos.d/`; `dnf5 copr disable` keeps it with `enabled=0`. The documentation mentions no priority and no package filtering.
 - Default `priority` is 99; the lowest value wins even if the package is older.
 
-### What is still unverified (tracked in the checklist)
+### Verified on Fedora 44 (real dnf5, GitHub Actions) and what is still open
 
-Behavior of real DNF5 on Fedora 44 for each scenario below, and of PackageKit. **Repository isolation is not claimed complete until all of them pass in Fedora 44 CI and on the owner's machine.**
+Run: https://github.com/zakbgr/ZackOS/actions/runs/45981701855 (commit af5248a): **25 pass, 0 fail, 1 skip**. The repositories in this test are local `file://` simulations of Fedora and of `copr:copr.fedorainfracloud.org:lionheartp:Hyprland` built from dummy RPMs; the override tested is the one `bin/zackos repo show-override` generates from the real manifest. The real COPR was never contacted.
 
-| Scenario | Where tested |
+| Scenario | Result |
 |---|---|
-| Same package offered by Fedora and COPR (Fedora must win, with a negative control) | CI |
-| COPR package requiring another COPR package | CI |
-| Forbidden package installs (`*-git`, protected names via a `Provides`) | CI |
-| Normal `dnf5 upgrade` (allowlisted COPR packages update; others do not) | CI |
-| Version conflicts and a downgrade | CI |
-| `dnf5 history` commands used in rollback advice | CI |
-| Repo IDs containing colons in an override section | CI |
-| PackageKit honoring the override | CI (best effort) and on-device procedure |
+| Negative control: without the override the COPR's `kitty 99.0` wins | confirmed (so the tests can detect a leak) |
+| dnf5 loads the override; COPR then exposes exactly `hyprland`, `uwsm`, `xdg-desktop-portal-hyprland` | pass |
+| Same package in Fedora and COPR (`kitty`, `zsh`): Fedora wins | pass |
+| `from_repo` reports the repo ID (`fedora`, the COPR ID) | pass, after a fix: dnf5 does not expand `\t` in `--queryformat` |
+| Allowlisted COPR package pulls its allowlisted COPR dependency; non-COPR dependency comes from Fedora | pass |
+| Forbidden installs refused: `kitty-99.0`, `*-git`, non-allowlisted names, `install --repo <copr> kitty` | pass |
+| COPR package whose COPR dependency is not allowlisted: dnf5 refuses, closure check reports the gap | pass |
+| `dnf5 upgrade`: Fedora `kitty` stays on Fedora; allowlisted `hyprland` upgrades from the COPR | pass |
+| Downgrade of a Fedora package stays in Fedora | pass |
+| Version skew: if Fedora later ships a package that is also allowlisted from the COPR, the **higher version wins** and the origin becomes Fedora. This is expected and accepted; the audit does not flag it | observed |
+| `dnf5 history list` / `dnf5 history undo <id>` removes exactly that transaction | pass |
+| Override written before the repository exists; colon-containing repo ID | pass |
+| Disabling the repo keeps the override and breaks nothing | pass |
+| **PackageKit honoring the override** | **NOT TESTED** (no systemd/D-Bus in a container; reported as skip) |
+| A COPR package that `Provides:` a protected name | **NOT TESTED** |
+| Installing a local `.rpm` file or `--from-repo`-style explicit bypasses | not preventable by repository configuration; out of scope |
+| The real COPR (real metadata, real dependency closure) | **NOT TESTED**; needs the owner's approval to enable it |
+
+**Conclusion: repository isolation is NOT declared complete.** The DNF5 layer behaves as designed in every scenario that could be exercised, but PackageKit, `Provides:`-based shadowing and the real COPR remain unverified, and the owner has not run anything on the ThinkPad.
 
 ## 4. Allowlist production (before Phase 4)
 

@@ -63,3 +63,13 @@ Please paste the output back.
 - Fedora 44 release coverage: Fedora Magazine, Red Hat blog, Linuxiac, It's FOSS
 - COPR project pages and READMEs for Hyprland builds on Fedora
 - Fedora Discussion threads on Hyprland COPRs and the F44 portal issue
+
+## Verified on Fedora 44 containers (CI, not on the ThinkPad)
+
+- `dnf5 repoquery --installed --queryformat` supports `%{from_repo}` (reports `fedora`, `updates` or the COPR repo ID). `\t` is not expanded: use a real tab. `%{repoid}` reports `@System` for installed packages and is not useful.
+- `dnf5 history list` and `dnf5 history undo <id>` work as advised.
+- `install --repo <id>` is accepted by dnf5.
+- kitty 0.47.1 has no `--debug-config`; configs are checked by loading them with `kitty +runpy` and reading kitty's own "Ignoring ..." warnings.
+- Fedora's zsh package ships `/etc/skel/.zshrc` and `.zprofile`; ZackOS never touches them.
+- A minimal Fedora install may lack `diffutils` (`cmp`, `diff`); ZackOS does not need them.
+- Hyprland packages are not in the Fedora 44 repos used by these containers; nothing about Hyprland itself was tested.
