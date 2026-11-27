@@ -34,7 +34,7 @@ Status: items 1-8 are implemented and pass the local suite (`bash tests/run.sh`,
 - Hyprland hyprlang-to-Lua migration; the Hyprland theme fragment is untouched
 - Any privileged operation executed by ZackOS on the owner's machine without the owner running it
 
-## Required before Phase 4
+## Required before Phase 5
 - [ ] Complete COPR dependency allowlist presented, every package justified
 - [ ] Exact Hyprland version and supported configuration syntax verified
 - [ ] Plain and UWSM session files verified for Fedora 44
