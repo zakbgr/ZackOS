@@ -18,6 +18,10 @@ dnf_available() {
     command -v "$(dnf_cmd)" >/dev/null 2>&1 && command -v rpm >/dev/null 2>&1
 }
 
+# Query format with a REAL tab: dnf5 on Fedora 44 does not expand "\t" in --queryformat (it prints
+# it literally), which broke tab-separated parsing. "\n" is expanded by dnf5 itself.
+_DNF_QF=$'%{name}\t%{from_repo}\\n'
+
 # dnf_valid_name <name>: conservative RPM name check (no globs, commas, spaces, options).
 dnf_valid_name() {
     [[ "${1:-}" =~ ^[A-Za-z0-9][A-Za-z0-9._+-]*$ ]]
@@ -38,7 +42,7 @@ dnf_installed_origin() {
         printf 'none'
         return 0
     fi
-    out="$("$(dnf_cmd)" repoquery --installed --queryformat '%{name}\t%{from_repo}\n' "${name}" 2>/dev/null |
+    out="$("$(dnf_cmd)" repoquery --installed --queryformat "${_DNF_QF}" "${name}" 2>/dev/null |
         awk -F'\t' -v n="${name}" '$1 == n && $2 != "" { print $2; exit }')" || true
     printf '%s' "${out:-unknown}"
 }
@@ -56,6 +60,6 @@ dnf_origin_class() {
 
 # dnf_all_installed_origins: "name<TAB>origin" for every installed package (read-only).
 dnf_all_installed_origins() {
-    "$(dnf_cmd)" repoquery --installed --queryformat '%{name}\t%{from_repo}\n' 2>/dev/null |
+    "$(dnf_cmd)" repoquery --installed --queryformat "${_DNF_QF}" 2>/dev/null |
         awk -F'\t' 'NF >= 2 { print $1 "\t" $2 }'
 }

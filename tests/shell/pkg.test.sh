@@ -91,6 +91,12 @@ assert_contains "${plan}" $'fastfetch\tcopr\tconflict' "plan: COPR-origin protec
 assert_rc 2 "invalid name refused" dnf_installed_origin 'kitty;rm -rf'
 assert_rc 2 "glob refused" dnf_installed_origin 'kit*'
 
+# ---- regression: dnf5 on Fedora 44 does not expand "\t" in --queryformat, so the format must
+# contain a real tab character (found by the Fedora 44 CI job)
+qline="$(grep '^dnf5 repoquery --installed --queryformat' "${FAKE_LOG}" | head -1)"
+assert_contains "${qline}" $'%{name}\t%{from_repo}' "queryformat contains a real tab"
+assert_eq "no" "$([[ "${qline}" == *'\t'* ]] && echo yes || echo no)" "queryformat has no literal backslash-t"
+
 # ---- nothing mutating was ever called
 assert_eq "no" "$(grep -qE '^dnf5 (install|upgrade|remove|copr)' "${FAKE_LOG}" && echo yes || echo no)" "no mutating dnf5 call"
 
