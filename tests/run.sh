@@ -26,7 +26,7 @@ done
 
 if command -v shellcheck >/dev/null 2>&1; then
     step "shellcheck"
-    shellcheck -x lib/*.sh scripts/detect-env scripts/check-packages bin/zackos tests/run.sh tests/shell/*.sh tests/fakebin/* || failed=1
+    shellcheck -x lib/*.sh scripts/detect-env scripts/check-packages bin/zackos tests/run.sh tests/shell/*.sh tests/fakebin/* tests/dnf5/*.sh || failed=1
 else
     step "shellcheck (skipped: not installed)"
 fi

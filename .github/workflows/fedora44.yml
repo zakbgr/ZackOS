@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: Fedora 44
+
+# Real dnf5 on a real Fedora 44 userland, in disposable containers. Nothing here touches a
+# developer machine. Repository isolation is NOT claimed unless every isolation scenario passes.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolation:
+    name: repository isolation (real dnf5)
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:44
+    env:
+      ZACKOS_CI_CONTAINER: "1"
+    steps:
+      - name: Tools for checkout
+        run: dnf5 -y install git
+      - uses: actions/checkout@v4
+      - run: bash tests/dnf5/isolation.sh
+
+  real-packages:
+    name: real Fedora packages, modules and CLI
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:44
+    env:
+      ZACKOS_CI_CONTAINER: "1"
+    steps:
+      - name: Tools for checkout
+        run: dnf5 -y install git
+      - uses: actions/checkout@v4
+      - run: bash tests/dnf5/real-packages.sh
