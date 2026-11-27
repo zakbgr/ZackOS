@@ -8,9 +8,31 @@ Constraint: development happens without access to the target machine. Anything t
 bash tests/run.sh
 ```
 
-This runs: the generated-files sync check, 21 Python unit tests, the shell tests (log, detect, preflight, backup/restore) and shellcheck if installed. Everything runs in temporary directories with a fake root, so it never touches your real `$HOME` or system. It needs only `bash`, `python3` (3.11+) and standard coreutils. `shellcheck` is optional.
+This runs: the generated-files sync check, the package manifest check, 21 Python unit tests, the shell tests (log, detect, preflight, backup, pkg, repo, priv, modules, module content, CLI) and shellcheck if installed. Everything runs in temporary directories with a fake root, so it never touches your real `$HOME` or system. It needs only `bash`, `python3` (3.11+) and standard coreutils. `shellcheck` is optional.
 
 In Phase 2 these ran in a generic Linux sandbox (not Fedora, not the ThinkPad) and passed. They have **not** been run on your machine yet; please run them and report the output.
+
+## Phase 3 status (actual results)
+
+Local run in the development sandbox (generic Linux, not Fedora, not the ThinkPad), last run: `ALL CHECKS PASSED`.
+
+| Suite | Assertions |
+|---|---|
+| backup | 33 |
+| cli (bin/zackos end to end, fake dnf5/rpm/sudo/lspci) | 60 |
+| detect | 38 |
+| log | 14 |
+| module-content (real kitty/zsh/fastfetch modules, zsh syntax and sourcing, jq JSON check) | 23 |
+| modules (engine: conflicts, ownership, idempotency, interrupted install) | 65 |
+| pkg | 48 |
+| preflight | 13 |
+| priv | 27 |
+| repo | 45 |
+| Python (render-theme) | 21 tests |
+
+Generated files: 8 up to date. Package manifest: valid (10 packages). shellcheck: clean.
+
+**Not yet executed:** the Fedora 44 scenarios in `tests/dnf5/` (workflow `.github/workflows/fedora44.yml`). They test real dnf5 and are the only evidence that counts for repository isolation; fake binaries prove the ZackOS logic, not DNF5 behavior. Until those jobs have run green, isolation is not complete. Scenarios that cannot be proven in a container (PackageKit, which needs systemd/D-Bus, and anything needing the real COPR) are reported as SKIP, never as pass. The CI scripts refuse to run outside a disposable `fedora:44` container.
 
 ## Test levels
 

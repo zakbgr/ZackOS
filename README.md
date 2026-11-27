@@ -68,3 +68,16 @@ bash scripts/detect-env    # read-only: prints your Fedora, desktop and display 
 ## License
 
 ZackOS is licensed under **GPL-3.0-or-later** (see [LICENSE](LICENSE)). Third-party fonts, icons, wallpapers and other assets keep their own licenses, listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Phase 3 command line (dry-run by default)
+
+```
+bin/zackos doctor                 # read-only report
+bin/zackos plan                   # what install would do (kitty, zsh, fastfetch)
+bin/zackos install kitty --apply  # link files into $HOME; never overwrites
+bin/zackos rollback --apply       # removes only links ZackOS can prove it created
+bin/zackos packages plan          # Fedora packages that would be installed
+bin/zackos repo show-override     # COPR isolation override preview (written nowhere)
+```
+
+COPR enable/disable are locked in this phase. Hyprland packages are candidates and cannot be selected. See docs/INSTALLATION-DESIGN.md and docs/PACKAGE-POLICY.md.

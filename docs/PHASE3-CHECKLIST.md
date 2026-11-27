@@ -2,15 +2,17 @@
 
 Scope approved 2026-11-25. Boxes are ticked only when the item is implemented **and** its tests pass; the evidence is in the pull request or CI run.
 
+Status: items 1-8 are implemented and pass the local suite (`bash tests/run.sh`, see docs/TESTING.md). Item 9 is written but **has not been executed**: it needs GitHub Actions (`fedora:44` containers), and the development sandbox cannot pull that image. Isolation is therefore **not** claimed complete. Item 10 is open until the CI results are in.
+
 ## In scope
-- [ ] 1. Design docs and ADRs 0005, 0006
-- [ ] 2. Dry-run default; exit code 5 (locked)
-- [ ] 3. Package manifest, validator, selection, dnf wrapper
-- [ ] 4. Isolation generator, audit, closure check, locked enable/disable
-- [ ] 5. Privileged-step runner with individual confirmation and journal
-- [ ] 6. Module plan, deploy, rollback (conflicts skipped, never overwritten)
-- [ ] 7. Kitty, Zsh, Fastfetch modules (no `.zshrc` edits, no login-shell change)
-- [ ] 8. `bin/zackos`: doctor, plan, status, install, rollback, packages, repo; GPU report
+- [x] 1. Design docs and ADRs 0005, 0006
+- [x] 2. Dry-run default; exit code 5 (locked)
+- [x] 3. Package manifest, validator, selection, dnf wrapper
+- [x] 4. Isolation generator, audit, closure check, locked enable/disable
+- [x] 5. Privileged-step runner with individual confirmation and journal
+- [x] 6. Module plan, deploy, rollback (conflicts skipped, never overwritten)
+- [x] 7. Kitty, Zsh, Fastfetch modules (no `.zshrc` edits, no login-shell change)
+- [x] 8. `bin/zackos`: doctor, plan, status, install, rollback, packages, repo; GPU report
 - [ ] 9. Fedora 44 CI scenarios (below)
 - [ ] 10. Final docs, honest isolation status
 
