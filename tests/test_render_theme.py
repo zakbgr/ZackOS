@@ -3,6 +3,8 @@
 
 import copy
 import importlib.util
+import json
+import re
 import unittest
 from pathlib import Path
 
@@ -144,3 +146,44 @@ class RepositorySync(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FastfetchConfig(unittest.TestCase):
+    """The Fastfetch identity: structure checks that need no Fastfetch binary.
+    (The real binary is exercised by the Fedora 44 terminal job.)"""
+
+    TEMPLATE = ROOT / "design" / "templates" / "fastfetch.jsonc.tmpl"
+    OUTPUT = ROOT / "modules" / "fastfetch" / "files" / ".config" / "fastfetch" / "config.jsonc"
+
+    def load(self):
+        text = "\n".join(l for l in self.OUTPUT.read_text().splitlines() if not l.lstrip().startswith("//"))
+        return json.loads(text)
+
+    def test_template_has_no_raw_colors(self):
+        self.assertIsNone(re.search(r"#[0-9A-Fa-f]{6}\b", self.TEMPLATE.read_text()), "use {{ colors.x }}")
+
+    def test_config_is_valid_jsonc(self):
+        self.assertIsInstance(self.load(), dict)
+
+    def test_only_known_top_level_keys(self):
+        self.assertLessEqual(set(self.load()), {"$schema", "logo", "display", "modules"})
+
+    def test_logo_is_ascii_with_both_palette_colors(self):
+        logo = self.load()["logo"]
+        self.assertEqual(logo["type"], "data")
+        self.assertTrue(logo["source"].isascii(), "no Nerd Font or other non-ASCII glyphs in the logo")
+        self.assertIn("$1", logo["source"])
+        self.assertIn("$2", logo["source"])
+        self.assertEqual(set(logo["color"]), {"1", "2"})
+        self.assertNotIn("\\", logo["source"].replace("\n", ""))
+
+    def test_fedora_stays_identified_as_the_os(self):
+        mods = self.load()["modules"]
+        self.assertIn("os", mods)
+        self.assertIn("Matrix Edition", json.dumps(mods))
+        self.assertNotIn("ZackOS Linux", self.OUTPUT.read_text())
+
+    def test_useful_system_info_is_kept(self):
+        mods = [m if isinstance(m, str) else m["type"] for m in self.load()["modules"]]
+        for needed in ("kernel", "uptime", "packages", "shell", "terminal", "de", "wm", "cpu", "gpu", "memory", "disk"):
+            self.assertIn(needed, mods)
