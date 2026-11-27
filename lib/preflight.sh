@@ -70,6 +70,6 @@ preflight_all_fedora() {
     preflight_arch x86_64 || rc="${ZACKOS_EXIT_PREFLIGHT}"
     preflight_fedora "${1:-}" || rc="${ZACKOS_EXIT_PREFLIGHT}"
     preflight_home_writable || rc="${ZACKOS_EXIT_PREFLIGHT}"
-    preflight_commands cp mv sha256sum diff date readlink || rc="${ZACKOS_EXIT_PREFLIGHT}"
+    preflight_commands cp mv sha256sum date readlink || rc="${ZACKOS_EXIT_PREFLIGHT}"
     return "${rc}"
 }

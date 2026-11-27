@@ -28,6 +28,7 @@ Each phase ends with a review. **No phase starts without your approval.** Phases
 **Scope (approved 2026-11-25):** package manifest and selection; repository isolation generator and audit; read-only `doctor`, `plan`, `status`; user-level module deployment and rollback; Kitty, Zsh and Fastfetch modules from Fedora packages only; tests and documentation. This absorbs the foundation of the original Phase 7.
 **Locked:** COPR enable/disable (implemented, not executable), Hyprland, Waybar, Rofi, session registration, the hyprlang-to-Lua migration.
 **Checklist:** [docs/PHASE3-CHECKLIST.md](docs/PHASE3-CHECKLIST.md). **Policy:** [docs/PACKAGE-POLICY.md](docs/PACKAGE-POLICY.md).
+**Status (2026-11-27):** implemented and green in Fedora 44 CI (isolation 25 pass / 0 fail / 1 skip; real packages 19 pass). Isolation is **not** declared complete: PackageKit, `Provides:` shadowing, the real COPR and on-device checks remain. Branch `phase3-ci` only; not merged to `main`.
 **Exit:** all checklist items pass in CI and the owner runs the local checks; isolation is declared complete only after the Fedora 44 scenarios and on-device checks pass.
 
 ## Phase 4 — Hyprland configuration and shortcuts

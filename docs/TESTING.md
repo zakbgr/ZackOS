@@ -32,7 +32,12 @@ Local run in the development sandbox (generic Linux, not Fedora, not the ThinkPa
 
 Generated files: 8 up to date. Package manifest: valid (10 packages). shellcheck: clean.
 
-**Not yet executed:** the Fedora 44 scenarios in `tests/dnf5/` (workflow `.github/workflows/fedora44.yml`). They test real dnf5 and are the only evidence that counts for repository isolation; fake binaries prove the ZackOS logic, not DNF5 behavior. Until those jobs have run green, isolation is not complete. Scenarios that cannot be proven in a container (PackageKit, which needs systemd/D-Bus, and anything needing the real COPR) are reported as SKIP, never as pass. The CI scripts refuse to run outside a disposable `fedora:44` container.
+**Fedora 44 CI (real dnf5, `fedora:44` containers, `.github/workflows/fedora44.yml`):** run https://github.com/zakbgr/ZackOS/actions/runs/45981701855
+- isolation job: 25 pass, 0 fail, 1 skip (PackageKit)
+- real-packages job: 19 pass, 0 fail, 0 skip (real Fedora kitty/zsh/fastfetch, modules and CLI as an unprivileged user, the whole local suite re-run on Fedora 44)
+- Dolphin footprint (informational): `dnf5 --assumeno install dolphin` in a minimal container pulls 510 packages (about 371 MiB download); on GNOME fewer will be needed, so Dolphin stays optional.
+
+Fake binaries prove the ZackOS logic; only the Fedora 44 runs count as evidence about DNF5. These runs found three real bugs that the generic-Linux suite could not: dnf5 does not expand `\t` in `--queryformat`, and `cmp` and `diff` (diffutils) cannot be assumed present. All three are fixed with regression tests. PackageKit (needs systemd/D-Bus) and the real COPR cannot be proven in a container; PackageKit is reported as SKIP and is not claimed. The CI scripts refuse to run outside a disposable `fedora:44` container.
 
 ## Test levels
 

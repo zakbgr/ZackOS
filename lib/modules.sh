@@ -122,6 +122,16 @@ _mod_parent_problem() {
     return 1
 }
 
+# _mod_same_content <a> <b>: byte-identical, using coreutils only (cmp/diff live in diffutils,
+# which a minimal Fedora install may lack; found by the Fedora 44 CI job).
+_mod_same_content() {
+    local a b
+    [[ "$(stat -c %s -- "$1")" == "$(stat -c %s -- "$2")" ]] || return 1
+    a="$(sha256sum <"$1")" || return 1
+    b="$(sha256sum <"$2")" || return 1
+    [[ "${a}" == "${b}" ]]
+}
+
 # mod_classify <module> <rel>: prints  state<TAB>reason   (absent | ours | identical | conflict)
 mod_classify() {
     local m="$1" rel="$2" root src target reason
@@ -141,7 +151,7 @@ mod_classify() {
     elif [[ -d "${target}" ]]; then
         printf 'conflict\tdirectory in the way\n'
     elif [[ -f "${target}" ]]; then
-        if cmp -s -- "${src}" "${target}"; then
+        if _mod_same_content "${src}" "${target}"; then
             printf 'identical\t\n'
         else
             printf 'conflict\texisting file differs\n'
