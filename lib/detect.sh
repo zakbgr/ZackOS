@@ -114,6 +114,25 @@ detect_command() {
     fi
 }
 
+# detect_gpus: one line per display adapter, read-only. Uses lspci when present, otherwise sysfs.
+detect_gpus() {
+    local out card v d
+    if command -v lspci >/dev/null 2>&1; then
+        out="$(lspci -nn 2>/dev/null | grep -E 'VGA compatible|3D controller|Display controller' | sed 's/^[^ ]* //')"
+        if [[ -n "${out}" ]]; then
+            printf '%s\n' "${out}"
+            return 0
+        fi
+    fi
+    for card in "$(_detect_root)"/sys/class/drm/card[0-9]*/device; do
+        [[ -r "${card}/vendor" && -r "${card}/device" ]] || continue
+        read -r v <"${card}/vendor"
+        read -r d <"${card}/device"
+        printf 'sysfs %s:%s\n' "${v#0x}" "${d#0x}"
+    done
+    return 0
+}
+
 # detect_summary: key=value report, meant to be pasted back into a bug report or chat.
 detect_summary() {
     printf 'distro_id=%s\n' "$(detect_distro_id)"

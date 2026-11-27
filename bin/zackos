@@ -1,0 +1,354 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# zackos: command line front end for ZackOS (Phase 3).
+#
+# Safety model (docs/INSTALLATION-DESIGN.md):
+#   - dry-run is the default; nothing changes without --apply
+#   - doctor, plan, status and "repo show-override|audit" are read-only
+#   - user-level files go through lib/modules.sh (never overwrites, rollback proves ownership)
+#   - every package or system change goes through lib/priv.sh (one confirmation per step)
+#   - packages come only from the manifest (lib/pkg.sh); candidate/COPR rows are not selectable
+#   - COPR enable/disable are LOCKED (lib/repo.sh) and exit 5
+set -u
+
+_self="${BASH_SOURCE[0]}"
+while [[ -L "${_self}" ]]; do
+    _t="$(readlink -- "${_self}")"
+    [[ "${_t}" == /* ]] && _self="${_t}" || _self="$(dirname -- "${_self}")/${_t}"
+done
+ZACKOS_REPO="$(cd -P -- "$(dirname -- "${_self}")/.." && pwd)"
+unset _self _t
+
+# shellcheck source=lib/log.sh
+source "${ZACKOS_REPO}/lib/log.sh"
+# shellcheck source=lib/detect.sh
+source "${ZACKOS_REPO}/lib/detect.sh"
+# shellcheck source=lib/preflight.sh
+source "${ZACKOS_REPO}/lib/preflight.sh"
+# shellcheck source=lib/dnf.sh
+source "${ZACKOS_REPO}/lib/dnf.sh"
+# shellcheck source=lib/pkg.sh
+source "${ZACKOS_REPO}/lib/pkg.sh"
+# shellcheck source=lib/repo.sh
+source "${ZACKOS_REPO}/lib/repo.sh"
+# shellcheck source=lib/priv.sh
+source "${ZACKOS_REPO}/lib/priv.sh"
+# shellcheck source=lib/modules.sh
+source "${ZACKOS_REPO}/lib/modules.sh"
+
+# The only COPR ZackOS knows about. Locked: nothing here enables it.
+readonly ZACKOS_COPR_SPEC="lionheartp/Hyprland"
+readonly ZACKOS_DEFAULT_MODULES=(kitty zsh fastfetch)
+
+usage() {
+    cat <<'USAGE'
+zackos - ZackOS Matrix Edition (Phase 3)
+
+Usage: zackos <command> [options]
+
+Read-only:
+  doctor                       report environment, GPU, packages, config conflicts, repo audit
+  plan [module...]             show what install would do (default: kitty zsh fastfetch)
+  status                       show deployed modules and their state
+  repo show-override           print the generated COPR isolation override (not written anywhere)
+  repo audit                   check installed packages against the manifest
+  packages plan [--group G]    show which packages would be installed
+
+Changes (dry-run unless --apply):
+  install <module...>          link module files into $HOME (never overwrites)
+  rollback [session]           remove links that ZackOS can prove it created
+  packages install [--group G] install approved Fedora packages, one confirmed sudo step each
+
+Locked (need the owner's approval in a later phase):
+  repo enable | repo disable   exit 5, change nothing
+
+Options:
+  --apply     perform the change (default is dry-run)
+  -h, --help  this help
+
+Dolphin is optional: zackos packages install --group optional-dolphin
+The login shell is never changed; see modules/zsh for the one line to source.
+USAGE
+}
+
+# ---- helpers -------------------------------------------------------------------------------
+need_apply_preflight() {
+    preflight_not_root || exit "$?"
+    preflight_arch x86_64 || exit "$?"
+    preflight_fedora 44 || exit "$?"
+    preflight_home_writable || exit "$?"
+}
+
+known_group() {
+    local g
+    for g in "${PKG_GROUPS[@]}"; do [[ "$g" == "$1" ]] && return 0; done
+    return 1
+}
+
+parse_group() { # sets GROUPS_SEL from remaining args; returns 1 on error
+    GROUPS_SEL=()
+    while (($#)); do
+        case "$1" in
+        --group)
+            [[ -n "${2:-}" ]] || {
+                log_error "--group needs a value"
+                return 1
+            }
+            known_group "$2" || {
+                log_error "unknown group '$2' (known: ${PKG_GROUPS[*]})"
+                return 1
+            }
+            GROUPS_SEL+=("$2")
+            shift 2
+            ;;
+        *)
+            log_error "unexpected argument: $1"
+            return 1
+            ;;
+        esac
+    done
+}
+
+strip_apply() { # sets ARGS (without --apply) and exports ZACKOS_APPLY when --apply given
+    ARGS=()
+    local a
+    for a in "$@"; do
+        if [[ "${a}" == "--apply" ]]; then
+            export ZACKOS_APPLY=1
+        else
+            ARGS+=("${a}")
+        fi
+    done
+}
+
+# ---- doctor (read-only) ---------------------------------------------------------------------
+cmd_doctor() {
+    local name state action m rel mstate reason issues=0 spec="${ZACKOS_COPR_SPEC}" f src grp
+    echo "== environment"
+    detect_summary
+    preflight_arch x86_64 || issues=$((issues + 1))
+    preflight_fedora 44 || issues=$((issues + 1))
+
+    echo
+    echo "== graphics (report only; no assumptions are made)"
+    local gpus
+    gpus="$(detect_gpus)"
+    if [[ -n "${gpus}" ]]; then printf '%s\n' "${gpus}"; else echo "no display adapter detected"; fi
+    if grep -qiE 'UHD Graphics 620|8086:5917' <<<"${gpus}"; then
+        echo "note: Intel UHD 620 detected; heavy blur/shadow effects cost power (docs/FEDORA-COMPATIBILITY.md)"
+    fi
+    echo "tlp=$(detect_command tlp)"
+
+    echo
+    echo "== packages (manifest: $(pkg_manifest_file | sed "s|${ZACKOS_REPO}/||"))"
+    if pkg_validate >/dev/null 2>&1; then echo "manifest: valid"; else
+        echo "manifest: INVALID (run scripts/check-packages)"
+        issues=$((issues + 1))
+    fi
+    if dnf_available; then
+        while IFS=$'\t' read -r name state action; do
+            printf '%-12s state=%-8s action=%s\n' "${name}" "${state}" "${action}"
+            [[ "${action}" == "conflict" ]] && issues=$((issues + 1))
+        done < <(pkg_plan core-terminal optional-dolphin)
+    else
+        echo "dnf5 not available: package state not checked"
+    fi
+    echo "candidate rows (NOT selectable in Phase 3):"
+    while IFS=$'\t' read -r name src grp _opt status _purpose; do
+        [[ "${status}" == "candidate" ]] && printf '  %-28s source=%s group=%s\n' "${name}" "${src}" "${grp}"
+    done < <(pkg_rows)
+
+    echo
+    echo "== repositories"
+    local found=0
+    for f in "$(detect_root_path)"/etc/yum.repos.d/*copr*"${spec%%/*}"*"${spec#*/}"*.repo; do
+        [[ -e "${f}" ]] || continue
+        found=1
+        echo "COPR repo file present: ${f}"
+    done
+    ((found == 0)) && echo "COPR ${spec}: no repo file present (not enabled)"
+    echo "COPR operations: locked"
+    if dnf_available; then
+        if dnf_all_installed_origins | repo_audit "${spec}"; then
+            echo "audit: no violations"
+        else
+            issues=$((issues + 1))
+        fi
+    else
+        echo "audit: skipped (dnf5 not available)"
+    fi
+
+    echo
+    echo "== configuration conflicts (existing files are never overwritten)"
+    for m in "${ZACKOS_DEFAULT_MODULES[@]}"; do
+        while IFS=$'\t' read -r _ rel mstate _act reason; do
+            [[ "${mstate}" == "conflict" ]] && {
+                echo "conflict  ${m}: ~/${rel}: ${reason}"
+                issues=$((issues + 1))
+            }
+        done < <(mod_plan "${m}" 2>/dev/null)
+    done
+    ((issues == 0)) && echo "none"
+
+    echo
+    echo "doctor: ${issues} item(s) need attention (nothing was changed)"
+    return 0
+}
+
+detect_root_path() { printf '%s' "${ZACKOS_ROOT:-}"; }
+
+# ---- plan / status -------------------------------------------------------------------------
+cmd_plan() {
+    local mods=("$@")
+    ((${#mods[@]})) || mods=("${ZACKOS_DEFAULT_MODULES[@]}")
+    ZACKOS_APPLY=0 ZACKOS_DRY_RUN=1 mod_install "${mods[@]}"
+}
+
+cmd_status() {
+    local any=0 m target state
+    while IFS=$'\t' read -r m target state; do
+        any=1
+        printf '%-10s %-8s %s\n' "${m}" "${state}" "${target}"
+    done < <(mod_status)
+    ((any)) || echo "no modules deployed by ZackOS"
+    return 0
+}
+
+# ---- install / rollback ----------------------------------------------------------------------
+cmd_install() {
+    strip_apply "$@"
+    ((${#ARGS[@]})) || {
+        log_error "install needs at least one module"
+        return 1
+    }
+    is_dry_run || need_apply_preflight
+    mod_install "${ARGS[@]}"
+}
+
+cmd_rollback() {
+    strip_apply "$@"
+    is_dry_run || { preflight_not_root || exit "$?"; }
+    mod_rollback "${ARGS[0]:-latest}"
+}
+
+# ---- packages --------------------------------------------------------------------------------
+cmd_packages() {
+    local sub="${1:-plan}"
+    shift || true
+    strip_apply "$@"
+    parse_group "${ARGS[@]}" || return 1
+    case "${sub}" in
+    plan)
+        dnf_available || {
+            log_error "dnf5 not found; cannot classify packages"
+            return 2
+        }
+        local n=0 name state action
+        while IFS=$'\t' read -r name state action; do
+            n=$((n + 1))
+            printf '%-12s state=%-8s action=%s\n' "${name}" "${state}" "${action}"
+        done < <(pkg_plan "${GROUPS_SEL[@]}")
+        ((n > 0)) || {
+            log_error "no installable packages in the selected group(s)"
+            return 1
+        }
+        ;;
+    install)
+        is_dry_run || need_apply_preflight
+        pkg_install_selected "${GROUPS_SEL[@]}"
+        ;;
+    *)
+        log_error "unknown packages subcommand: ${sub}"
+        return 1
+        ;;
+    esac
+}
+
+# pkg_install_selected [group...]: the only code path that installs packages. It consumes
+# pkg_plan (manifest + origin classification) and runs each install through priv_step.
+pkg_install_selected() {
+    local name state action n=0 rc=0 step_rc
+    dnf_available || {
+        log_error "dnf5 not found"
+        return 2
+    }
+    while IFS=$'\t' read -r name state action; do
+        n=$((n + 1))
+        case "${action}" in
+        ok | ok-origin-unknown) log_info "already installed: ${name} (${state})" ;;
+        conflict)
+            log_error "${name} is installed from '${state}', not Fedora. Not touching it; resolve manually."
+            rc=1
+            ;;
+        install)
+            # No -y: dnf5 shows its own transaction summary and asks as well.
+            priv_step "Install ${name} from Fedora" "sudo dnf5 remove ${name} (never run automatically)" \
+                "$(dnf_cmd)" install -- "${name}"
+            step_rc=$?
+            ((step_rc == 0)) || {
+                rc="${step_rc}"
+                [[ "${step_rc}" == "${ZACKOS_EXIT_DECLINED}" ]] && break
+            }
+            ;;
+        esac
+    done < <(pkg_plan "$@")
+    ((n > 0)) || {
+        log_error "no installable packages in the selected group(s)"
+        return 1
+    }
+    return "${rc}"
+}
+
+# ---- repo ------------------------------------------------------------------------------------
+cmd_repo() {
+    local sub="${1:-}" names=() n
+    shift || true
+    strip_apply "$@"
+    case "${sub}" in
+    show-override)
+        while IFS= read -r n; do names+=("${n}"); done < <(repo_allowlist "${ZACKOS_COPR_SPEC}")
+        repo_generate_override "$(repo_copr_id "${ZACKOS_COPR_SPEC}")" "${names[@]}"
+        ;;
+    audit)
+        dnf_available || {
+            log_error "dnf5 not found"
+            return 2
+        }
+        if dnf_all_installed_origins | repo_audit "${ZACKOS_COPR_SPEC}"; then
+            log_info "audit: no violations"
+        else
+            return 1
+        fi
+        ;;
+    enable) repo_enable_execute ;;
+    disable) repo_disable_execute ;;
+    *)
+        log_error "usage: zackos repo show-override|audit|enable|disable"
+        return 1
+        ;;
+    esac
+}
+
+# ---- main ------------------------------------------------------------------------------------
+main() {
+    local cmd="${1:-}"
+    shift || true
+    case "${cmd}" in
+    "" | -h | --help | help) usage ;;
+    doctor) cmd_doctor "$@" ;;
+    plan) cmd_plan "$@" ;;
+    status) cmd_status "$@" ;;
+    install) cmd_install "$@" ;;
+    rollback) cmd_rollback "$@" ;;
+    packages) cmd_packages "$@" ;;
+    repo) cmd_repo "$@" ;;
+    *)
+        log_error "unknown command: ${cmd}"
+        usage >&2
+        return 1
+        ;;
+    esac
+}
+
+main "$@"

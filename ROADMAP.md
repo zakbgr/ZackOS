@@ -5,8 +5,8 @@ Each phase ends with a review. **No phase starts without your approval.** Phases
 | Phase | Name | Status |
 |---|---|---|
 | 1 | Repository architecture and scaffolding | Approved |
-| 2 | Design system and shared configuration | In review |
-| 3 | Terminal: Kitty, Zsh, Fastfetch | Not started |
+| 2 | Design system and shared configuration | Approved |
+| 3 | Package policy, installer foundation, terminal modules | In progress |
 | 4 | Hyprland and keyboard shortcuts | Not started |
 | 5 | Waybar and Rofi | Not started |
 | 6 | Application integration and polish | Not started |
@@ -24,14 +24,15 @@ Each phase ends with a review. **No phase starts without your approval.** Phases
 **Done in Phase 2:** palette and generator with validation and contrast checks, six committed generated files, `lib/` (log, detect, preflight, backup), `scripts/detect-env`, tests, CI, ADRs 0001 to 0004, LICENSE and third-party notices.
 **Exit:** you review the proposed palette additions; the generator and library tests pass on your machine too (`bash tests/run.sh`). Still no installer touching `$HOME`.
 
-## Phase 3 — Terminal customization
-**Deliver:** Kitty, Zsh and Fastfetch modules, themed from the palette.
-**Safety:** first modules that deploy files, so this phase delivers the minimal `plan` and `install` for these modules with backup, tested in a throwaway `$HOME` before you run it for real.
-**Exit:** you run it on the ThinkPad, report results, and rollback is demonstrated to work.
+## Phase 3 — Package policy, installer foundation, terminal modules
+**Scope (approved 2026-11-25):** package manifest and selection; repository isolation generator and audit; read-only `doctor`, `plan`, `status`; user-level module deployment and rollback; Kitty, Zsh and Fastfetch modules from Fedora packages only; tests and documentation. This absorbs the foundation of the original Phase 7.
+**Locked:** COPR enable/disable (implemented, not executable), Hyprland, Waybar, Rofi, session registration, the hyprlang-to-Lua migration.
+**Checklist:** [docs/PHASE3-CHECKLIST.md](docs/PHASE3-CHECKLIST.md). **Policy:** [docs/PACKAGE-POLICY.md](docs/PACKAGE-POLICY.md).
+**Exit:** all checklist items pass in CI and the owner runs the local checks; isolation is declared complete only after the Fedora 44 scenarios and on-device checks pass.
 
 ## Phase 4 — Hyprland configuration and shortcuts
 **Deliver:** Hyprland module, keybinding map (documented as a table), monitor, input and ThinkPad specifics (TrackPoint, touchpad, function keys, brightness), idle and lock.
-**Prerequisite:** run the COPR verification commands in `docs/FEDORA-COMPATIBILITY.md` on the ThinkPad and report the results. The source decision is made (ADR 0001).
+**Prerequisites:** the complete COPR dependency allowlist with justifications; the exact Hyprland version and supported configuration syntax (the hyprlang-to-Lua question is deferred to here); verified plain and UWSM session files; on-device isolation and PackageKit results; owner approval to unlock COPR operations (ADR 0005).
 **Exit:** a login into the Hyprland session works and the previous session still works.
 
 ## Phase 5 — Waybar and Rofi

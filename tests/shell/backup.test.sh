@@ -9,6 +9,7 @@ source "${HERE}/../../lib/backup.sh"
 
 make_tmp
 export NO_COLOR=1
+export ZACKOS_APPLY=1
 export ZACKOS_STATE_DIR="${T_TMP}/state"
 FAKE_HOME="${T_TMP}/home"
 mkdir -p "${FAKE_HOME}/.config/kitty" "${FAKE_HOME}/.config/rofi/themes"

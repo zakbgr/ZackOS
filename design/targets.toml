@@ -38,3 +38,15 @@ template      = "nvim-palette.lua.tmpl"
 output        = "modules/nvim/files/.config/nvim/lua/zackos/palette.lua"
 comment_open  = "--"
 comment_close = ""
+
+[[target]]
+template      = "zsh-theme.zsh.tmpl"
+output        = "modules/zsh/files/.config/zackos/zsh/zackos-theme.zsh"
+comment_open  = "#"
+comment_close = ""
+
+[[target]]
+template      = "fastfetch.jsonc.tmpl"
+output        = "modules/fastfetch/files/.config/fastfetch/config.jsonc"
+comment_open  = "//"
+comment_close = ""

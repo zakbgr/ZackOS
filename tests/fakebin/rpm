@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Fake rpm for tests. FAKE_RPM_INSTALLED: file with one installed package name per line.
+printf 'rpm %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+if [[ "${1:-}" == "-q" ]]; then
+    shift
+    name=""
+    for a in "$@"; do [[ "${a}" == -* ]] || name="${a}"; done
+    if [[ -f "${FAKE_RPM_INSTALLED:-/nonexistent}" ]] && grep -qx -- "${name}" "${FAKE_RPM_INSTALLED}"; then
+        echo "${name}-1.0-1.fc44.x86_64"
+        exit 0
+    fi
+    echo "package ${name} is not installed"
+    exit 1
+fi
+exit 0

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Fake sudo for tests. It records the call and runs NOTHING.
+printf 'sudo %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+exit 0
